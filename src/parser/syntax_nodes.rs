@@ -116,4 +116,15 @@ pub enum SyntaxNode {
     ExceptClauseStmtNode(u32, u32, Box<Token>, Option<Box<SyntaxNode>>, Option<Box<Token>>, Option<Box<SyntaxNode>>),
     TryStmtNode(u32, u32, Box<Token>, Box<Token>, Box<SyntaxNode>, Vec<Box<SyntaxNode>>, Option<Box<SyntaxNode>>, Option<Box<Token>>, Option<Box<Token>>, Option<Box<SyntaxNode>>),
     ExceptStmtNode(u32, u32, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>),
+
+    /* Block nodes */
+    EvalInputStmtNode(u32, u32, Box<SyntaxNode>, Vec<Box<Token>>, Box<Token>),
+    FuncTypeInputStmtNode(u32, u32, Box<SyntaxNode>, Vec<Box<Token>>, Box<Token>),
+
+
+    FuncTypeStmtNode(u32, u32, Box<Token>, Option<Box<SyntaxNode>>, Box<Token>, Box<Token>, Box<SyntaxNode>),
+    TypeListStmtNode(u32, u32, Vec<Box<SyntaxNode>>, Vec<Box<SyntaxNode>>, Option<Box<Token>>, Option<Box<SyntaxNode>>, Option<Box<Token>>, Option<Box<SyntaxNode>>),
+    FuncBodyStmtNopde(u32, u32, Box<Token>, Box<Token>, Box<Token>, Box<Token>, Vec<Box<SyntaxNode>>, Box<Token>),
+
+    /* Matches nodes */
 }
