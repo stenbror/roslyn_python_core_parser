@@ -2,7 +2,7 @@
 use super::token_nodes::Token;
 
 pub enum SyntaxNode {
-    /* Expression rules */
+    /* Expression nodes */
     NamedExprNode(u32, u32, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>),
     TestExprNode(u32, u32, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>),
     LambdaExprNode(u32, u32, Box<Token>, Option<Box<SyntaxNode>>, Box<Token>, Box<SyntaxNode>, bool),
@@ -55,4 +55,18 @@ pub enum SyntaxNode {
     TrailerCallExprNode(u32, u32, Box<Token>, Box<SyntaxNode>, Box<Token>),
     TrailerIndexExprNode(u32, u32, Box<Token>, Box<SyntaxNode>, Box<Token>),
     SubscriptListExprNode(u32, u32, Vec::<Box<SyntaxNode>>, Vec::<Box<SyntaxNode>>),
+    SubscriptExprNode(u32, u32, Option<Box<SyntaxNode>>, Option<Box<Token>>, Option<Box<SyntaxNode>>, Option<Box<Token>>, Option<Box<SyntaxNode>>),
+    ExprListExprNode(u32, u32, Vec<Box<SyntaxNode>>, Vec<Box<SyntaxNode>>),
+    TestListExprNode(u32, u32, Vec<Box<SyntaxNode>>, Vec<Box<SyntaxNode>>),
+    ArgListExprNode(u32, u32, Vec<Box<SyntaxNode>>, Vec<Box<SyntaxNode>>),
+    ArgumentExprNode(u32, u32, Box<SyntaxNode>, Option<Box<Token>>, Option<Box<SyntaxNode>>),
+    MulArgumentExprNode(u32, u32, Box<Token>, Box<SyntaxNode>),
+    PowerArgumentExprNode(u32, u32, Box<Token>, Box<SyntaxNode>),
+    SyncCompForExprNode(u32, u32, Box<Token>, Box<SyntaxNode>, Box<Token>, Option<Box<SyntaxNode>>),
+    CompForExprNode(u32, u32, Box<Token>, Option<Box<SyntaxNode>>),
+    CompIfExprNode(u32, u32, Box<Token>, Box<SyntaxNode>, Option<Box<SyntaxNode>>),
+    YieldExprNode(u32, u32, Box<Token>, Box<SyntaxNode>),
+    YieldFromExprNode(u32, u32, Box<Token>, Box<Token>, Box<SyntaxNode>),
+
+    /* Statement nodes */
 }
