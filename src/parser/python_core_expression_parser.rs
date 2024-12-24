@@ -1,6 +1,8 @@
-
+use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
+use crate::parser::syntax_nodes::SyntaxNode::NamedExprNode;
+use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
 // Trait for expression grammar rule ///////////////////////////////////////////////////////////////
@@ -43,7 +45,21 @@ trait ExpressionRules {
 // Implementing all expression grammar rules ///////////////////////////////////////////////////////
 impl ExpressionRules for PythonCoreParser {
     fn parse_named_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let left = self.parse_named_expr()?;
+
+        match &*self.lexer.symbol {
+            Token::ColonAssignToken(_, _, _) => {
+                let symbol = self.lexer.symbol.clone();
+                &self.lexer.advance();
+
+                let right = self.parse_expr()?;
+                Ok(Box::new(NamedExprNode(pos, self.lexer.position, left, symbol, right)))
+            },
+            _ => {
+                Ok(left)
+            }
+        }
     }
 
     fn parse_test_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
@@ -175,6 +191,7 @@ impl ExpressionRules for PythonCoreParser {
     }
 }
 
+// Unittests for expression grammar rules //////////////////////////////////////////////////////////
 #[cfg(test)]
 mod tests {
     #[test]

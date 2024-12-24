@@ -1,8 +1,9 @@
 
 use super::token_nodes::Token;
 
-#[derive()]
+#[derive(Clone)]
 pub enum SyntaxNode {
+
     /* Expression nodes */
     NamedExprNode(u32, u32, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>),
     TestExprNode(u32, u32, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>),

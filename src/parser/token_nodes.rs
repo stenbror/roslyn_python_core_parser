@@ -1,7 +1,7 @@
 
 use super::trivia_nodes::Trivia;
 
-#[derive()]
+#[derive(Clone)]
 pub enum Token {
 
     /* Reserved keywords as of Python 3.13 */
@@ -97,5 +97,7 @@ pub enum Token {
     IndentToken(u32, u32, Vec<Box<Trivia>>),
     DedentToken(u32, u32, Vec<Box<Trivia>>),
     TypeCommentToken(u32, u32, Box<str>, Vec<Box<Trivia>>),
-    EofToken(u32, u32, Vec<Box<Trivia>>)
+    EofToken(u32, u32, Vec<Box<Trivia>>),
+
+    Invalid
 }
