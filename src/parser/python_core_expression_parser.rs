@@ -93,7 +93,12 @@ impl ExpressionRules for PythonCoreParser {
     }
 
     fn parse_test_no_cond_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        match &*self.lexer.symbol {
+            Token::LambdaToken( _ , _ , _ ) => {
+                self.parse_lambda_def_expr(false)
+            },
+            _ => self.parse_or_test_expr()
+        }
     }
 
     fn parse_lambda_def_expr(&mut self, is_conditional: bool) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
