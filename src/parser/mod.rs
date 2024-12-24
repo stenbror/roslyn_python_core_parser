@@ -7,3 +7,4 @@ mod python_core_statement_parser;
 mod python_core_match_parser;
 mod python_core_block_parser;
 mod python_core_tokenizer;
+mod syntax_error;
