@@ -1,7 +1,7 @@
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
-use crate::parser::syntax_nodes::SyntaxNode::NamedExprNode;
+use crate::parser::syntax_nodes::SyntaxNode::{NamedExprNode, TestExprNode};
 use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
@@ -49,7 +49,7 @@ impl ExpressionRules for PythonCoreParser {
         let left = self.parse_expr()?;
 
         match &*self.lexer.symbol {
-            Token::ColonAssignToken(_, _, _) => {
+            Token::ColonAssignToken( _ , _ , _ ) => {
                 let symbol = self.lexer.symbol.clone();
                 &self.lexer.advance();
 
@@ -63,7 +63,33 @@ impl ExpressionRules for PythonCoreParser {
     }
 
     fn parse_test_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        match &*self.lexer.symbol {
+            Token::LambdaToken( _ , _ , _ ) => {
+                self.parse_lambda_def_expr(true)
+            },
+            _ => {
+                let pos = self.lexer.position;
+                let left = self.parse_or_test_expr()?;
+
+                match &*self.lexer.symbol {
+                    Token::IfToken( _ , _ , _ ) => {
+                        let symbol1 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+                        let right = self.parse_or_test_expr()?;
+                        match &*self.lexer.symbol {
+                            Token::ElseToken( _ , _ , _ ) => {
+                                let symbol2 = self.lexer.symbol.clone();
+                                self.lexer.advance();
+                                let next = self.parse_test_expr()?;
+                                Ok(Box::new(TestExprNode(pos, self.lexer.position, left, symbol1, right, symbol2, next)))
+                            },
+                            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting 'else' in test expression!"))))
+                        }
+                    },
+                    _ => Ok(left)
+                }
+            }
+        }
     }
 
     fn parse_test_no_cond_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
