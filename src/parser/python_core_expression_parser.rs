@@ -46,7 +46,7 @@ trait ExpressionRules {
 impl ExpressionRules for PythonCoreParser {
     fn parse_named_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
         let pos = self.lexer.position;
-        let left = self.parse_named_expr()?;
+        let left = self.parse_expr()?;
 
         match &*self.lexer.symbol {
             Token::ColonAssignToken(_, _, _) => {
