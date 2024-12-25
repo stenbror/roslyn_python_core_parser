@@ -33,7 +33,7 @@ trait ExpressionRules {
     fn parse_subscript_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_expr_list_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_test_list_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
-    fn parse_dictionary_set_maker_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_dictionary_set_maker_expr(&mut self, symbol1: Box<Token>) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_arg_list_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_argument_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_comp_iter_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
@@ -580,7 +580,7 @@ impl ExpressionRules for PythonCoreParser {
                     _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ')' in literal!"))))
                 }
             },
-            Token::LeftCurlyBracketToken( _ , _ , _ ) => self.parse_dictionary_set_maker_expr(),
+            Token::LeftCurlyBracketToken( _ , _ , _ ) => self.parse_dictionary_set_maker_expr(symbol1),
             _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting valid literal!"))))
         }
     }
@@ -649,7 +649,7 @@ impl ExpressionRules for PythonCoreParser {
         todo!()
     }
 
-    fn parse_dictionary_set_maker_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+    fn parse_dictionary_set_maker_expr(&mut self, symbol1: Box<Token>) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
         todo!()
     }
 
