@@ -2,7 +2,6 @@ use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
-use crate::parser::syntax_nodes::SyntaxNode::{CompForExprNode, CompIfExprNode, SubscriptExprNode, YieldExprNode, YieldFromExprNode};
 use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
@@ -708,7 +707,7 @@ impl ExpressionRules for PythonCoreParser {
             _ => ()
         }
 
-        Ok(Box::new(SubscriptExprNode(pos, self.lexer.position, first, symbol1, second, symbol2, third)))
+        Ok(Box::new(SyntaxNode::SubscriptExprNode(pos, self.lexer.position, first, symbol1, second, symbol2, third)))
     }
 
     fn parse_expr_list_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
@@ -828,7 +827,34 @@ impl ExpressionRules for PythonCoreParser {
     }
 
     fn parse_sync_comp_for_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol1 = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        let left = self.parse_expr_list_expr()?;
+
+        match &*self.lexer.symbol {
+            Token::InToken( _ , _ , _ ) => {
+                Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting 'in' in comprehension 'for' expression!"))))
+            },
+            _ => {
+                let symbol2 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let right = self.parse_or_test_expr()?;
+
+                let next = match &*self.lexer.symbol {
+                    Token::AsyncToken( _ , _ , _ ) |
+                    Token::ForToken( _ , _ , _ ) |
+                    Token::IfToken( _ , _ , _ ) => {
+                        Some(self.parse_comp_iter_expr()?)
+                    },
+                    _ => None
+                };
+
+                Ok(Box::new(SyntaxNode::SyncCompForExprNode(pos, self.lexer.position, symbol1, left, symbol2, right, next)))
+            }
+        }
     }
 
     fn parse_comp_for_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
@@ -847,7 +873,7 @@ impl ExpressionRules for PythonCoreParser {
             _ => None
         };
 
-        Ok(Box::new(CompForExprNode(pos, self.lexer.position, symbol, right, next)))
+        Ok(Box::new(SyntaxNode::CompForExprNode(pos, self.lexer.position, symbol, right, next)))
     }
 
     fn parse_comp_if_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
@@ -866,7 +892,7 @@ impl ExpressionRules for PythonCoreParser {
             _ => None
         };
 
-        Ok(Box::new(CompIfExprNode(pos, self.lexer.position, symbol, right, next)))
+        Ok(Box::new(SyntaxNode::CompIfExprNode(pos, self.lexer.position, symbol, right, next)))
     }
 
     fn parse_yield_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
@@ -881,12 +907,12 @@ impl ExpressionRules for PythonCoreParser {
 
                 let right = self.parse_test_expr()?;
 
-                Ok(Box::new(YieldFromExprNode(pos, self.lexer.position, symbol1, symbol2, right)))
+                Ok(Box::new(SyntaxNode::YieldFromExprNode(pos, self.lexer.position, symbol1, symbol2, right)))
             },
             _ => {
                 let right = self.parse_test_list_star_expr_stmt()?;
 
-                Ok(Box::new(YieldExprNode(pos, self.lexer.position, symbol1, right)))
+                Ok(Box::new(SyntaxNode::YieldExprNode(pos, self.lexer.position, symbol1, right)))
             }
         }
     }
