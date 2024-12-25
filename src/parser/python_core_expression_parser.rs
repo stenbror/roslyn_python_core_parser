@@ -2,7 +2,7 @@ use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
-use crate::parser::syntax_nodes::SyntaxNode::{PowerExprNode, UnaryBitInvertExprNode, UnaryMinusExprNode, UnaryPlusExprNode};
+use crate::parser::syntax_nodes::SyntaxNode::{AtomExprNode, PowerExprNode, TrailerCallExprNode, TrailerDotNameExprNode, TrailerIndexExprNode, UnaryBitInvertExprNode, UnaryMinusExprNode, UnaryPlusExprNode};
 use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
@@ -29,7 +29,6 @@ trait ExpressionRules {
     fn parse_await_atom_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_atom_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_test_list_comp_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
-    fn parse_trailer_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_subscript_list_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_subscript_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_expr_list_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
@@ -451,7 +450,77 @@ impl ExpressionRules for PythonCoreParser {
     }
 
     fn parse_await_atom_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol1 = match &*self.lexer.symbol {
+            Token::AwaitToken( _ , _ , _ ) => {
+                let symbol1 = self.lexer.symbol.clone();
+                self.lexer.advance();
+                Some(symbol1)
+            },
+            _ => None
+        };
+        let right = self.parse_atom_expr()?;
+        let mut trailers = Vec::<Box<SyntaxNode>>::new();
+
+        loop {
+            match &*self.lexer.symbol {
+                Token::LeftParenToken( _ , _ , _ ) => {
+                    let symbol2 = self.lexer.symbol.clone();
+                    self.lexer.advance();
+
+                    let next = match &*self.lexer.symbol {
+                        Token::RightParenToken( _ , _ , _ ) => None,
+                        _ => Some(self.parse_arg_list_expr()?)
+                    };
+
+                    match &*self.lexer.symbol {
+                        Token::RightParenToken( _ , _ , _ ) => {
+                            let symbol3 = self.lexer.symbol.clone();
+                            self.lexer.advance();
+
+                            trailers.push(Box::new(TrailerCallExprNode(pos, self.lexer.position, symbol2, next, symbol3)))
+                        },
+                        _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ')' in call trailer!"))))
+                    }
+                },
+                Token::LeftSquareBracketToken( _ , _ , _ ) => {
+                    let symbol2 = self.lexer.symbol.clone();
+                    self.lexer.advance();
+
+                    let next = self.parse_subscript_list_expr()?;
+
+                    match &*self.lexer.symbol {
+                        Token::RightSquareBracketToken( _ , _ , _ ) => {
+                            let symbol3 = self.lexer.symbol.clone();
+                            self.lexer.advance();
+
+                            trailers.push(Box::new(TrailerIndexExprNode(pos, self.lexer.position, symbol2, next, symbol3)))
+                        },
+                        _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ']' in index trailer!"))))
+                    }
+                },
+                Token::PeriodToken( _ , _ , _ ) => {
+                    let symbol2 = self.lexer.symbol.clone();
+                    self.lexer.advance();
+
+                    match &*self.lexer.symbol {
+                        Token::NameToken( _ , _ , _ , _ ) => {
+                            let next = self.parse_atom_expr()?;
+                            trailers.push(Box::new(TrailerDotNameExprNode(pos, self.lexer.position, symbol2, next)))
+                        }
+                        _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting NAME literal after '.' in trailer!"))))
+                    }
+                },
+                _ => break
+            }
+        }
+
+        trailers.reverse();
+
+        match symbol1.is_none() && trailers.is_empty() {
+            true => Ok(Box::new(AtomExprNode(pos, self.lexer.position, symbol1, right, trailers))),
+            _ => Ok(right)
+        }
     }
 
     fn parse_atom_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
@@ -459,10 +528,6 @@ impl ExpressionRules for PythonCoreParser {
     }
 
     fn parse_test_list_comp_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
-    }
-
-    fn parse_trailer_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
         todo!()
     }
 
