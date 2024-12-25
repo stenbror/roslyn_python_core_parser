@@ -2,7 +2,7 @@ use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
-use crate::parser::syntax_nodes::SyntaxNode::{CompareEqualExprNode, CompareGreaterEqualExprNode, CompareGreaterExprNode, CompareInEqualExprNode, CompareIsExprNode, CompareIsNotExprNode, CompareLessEqualExprNode, CompareLessExprNode, CompareNotEqualExprNode, CompareNotInExprNode, LambdaExprNode, NamedExprNode, NotTestExprNode, OrExprNode, OrTestExprNode, TestExprNode};
+use crate::parser::syntax_nodes::SyntaxNode::{CompareEqualExprNode, CompareGreaterEqualExprNode, CompareGreaterExprNode, CompareInEqualExprNode, CompareIsExprNode, CompareIsNotExprNode, CompareLessEqualExprNode, CompareLessExprNode, CompareNotEqualExprNode, CompareNotInExprNode, LambdaExprNode, MulExprNode, NamedExprNode, NotTestExprNode, OrExprNode, OrTestExprNode, StarExprNode, TestExprNode};
 use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
@@ -247,7 +247,7 @@ impl ExpressionRules for PythonCoreParser {
 
                             let right = self.parse_expr()?;
 
-                            left = Box::new(CompareNotInExprNode(pos, self.lexer.position, left, symbol1, right))
+                            left = Box::new(CompareNotInExprNode(pos, self.lexer.position, left, symbol1, symbol2, right))
                         },
                         _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting 'in' in 'not in' compare expression!"))))
                     }
@@ -260,7 +260,13 @@ impl ExpressionRules for PythonCoreParser {
     }
 
     fn parse_star_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol1 = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        let right = self.parse_expr()?;
+
+        Ok(Box::new(StarExprNode(pos, self.lexer.position, symbol1, right)))
     }
 
     fn parse_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
