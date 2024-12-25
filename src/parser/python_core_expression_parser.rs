@@ -633,7 +633,36 @@ impl ExpressionRules for PythonCoreParser {
     }
 
     fn parse_subscript_list_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+        let mut separators = Vec::<Box<Token>>::new();
+
+        nodes.push(self.parse_subscript_expr()?);
+
+        loop {
+            match &*self.lexer.symbol {
+                Token::CommaToken( _ , _ , _ ) => {
+                    separators.push(self.lexer.symbol.clone());
+                    self.lexer.advance();
+
+                    match &*self.lexer.symbol {
+                        Token::RightSquareBracketToken( _ , _ , _ ) => break,
+                        _ => {
+                            nodes.push(self.parse_subscript_expr()?);
+                        }
+                    }
+                },
+                _ => break
+            }
+        }
+
+        nodes.reverse();
+        separators.reverse();
+
+        Ok(match nodes.len() == 1 && separators.len() == 0 {
+            true => nodes.pop().unwrap(),
+            _ => Box::new(SyntaxNode::SubscriptListExprNode(pos, self.lexer.position, nodes, separators)),
+        })
     }
 
     fn parse_subscript_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {

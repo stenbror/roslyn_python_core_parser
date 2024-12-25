@@ -57,7 +57,7 @@ pub enum SyntaxNode {
     TrailerDotNameExprNode(u32, u32, Box<Token>, Box<SyntaxNode>),
     TrailerCallExprNode(u32, u32, Box<Token>, Option<Box<SyntaxNode>>, Box<Token>),
     TrailerIndexExprNode(u32, u32, Box<Token>, Box<SyntaxNode>, Box<Token>),
-    SubscriptListExprNode(u32, u32, Vec<Box<SyntaxNode>>, Vec<Box<SyntaxNode>>),
+    SubscriptListExprNode(u32, u32, Vec<Box<SyntaxNode>>, Vec<Box<Token>>),
     SubscriptExprNode(u32, u32, Option<Box<SyntaxNode>>, Option<Box<Token>>, Option<Box<SyntaxNode>>, Option<Box<Token>>, Option<Box<SyntaxNode>>),
     ExprListExprNode(u32, u32, Vec<Box<SyntaxNode>>, Vec<Box<SyntaxNode>>),
     TestListExprNode(u32, u32, Vec<Box<SyntaxNode>>, Vec<Box<SyntaxNode>>),
