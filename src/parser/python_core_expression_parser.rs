@@ -2,7 +2,7 @@ use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
-use crate::parser::syntax_nodes::SyntaxNode::{AtomExprNode, PowerExprNode, TrailerCallExprNode, TrailerDotNameExprNode, TrailerIndexExprNode, UnaryBitInvertExprNode, UnaryMinusExprNode, UnaryPlusExprNode};
+use crate::parser::syntax_nodes::SyntaxNode::{AtomExprNode, EllipsisExprNode, FalseExprNode, ListExprNode, NameExprNode, NoneExprNode, NumberExprNode, PowerExprNode, StringExprNode, TrailerCallExprNode, TrailerDotNameExprNode, TrailerIndexExprNode, TrueExprNode, TupleExprNode, UnaryBitInvertExprNode, UnaryMinusExprNode, UnaryPlusExprNode};
 use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
@@ -524,7 +524,65 @@ impl ExpressionRules for PythonCoreParser {
     }
 
     fn parse_atom_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol1 = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        match &*self.lexer.symbol {
+            Token::NameToken( _ , _ , _ , _ ) => Ok(Box::new(NameExprNode(pos, self.lexer.position, symbol1))),
+            Token::NumberToken( _ , _ , _ , _ ) => Ok(Box::new(NumberExprNode(pos, self.lexer.position, symbol1))),
+            Token::NoneToken( _ , _ , _ ) => Ok(Box::new(NoneExprNode(pos, self.lexer.position, symbol1))),
+            Token::FalseToken( _ , _ , _ ) => Ok(Box::new(FalseExprNode(pos, self.lexer.position, symbol1))),
+            Token::TrueToken( _ , _ , _ ) => Ok(Box::new(TrueExprNode(pos, self.lexer.position, symbol1))),
+            Token::EllipsisToken( _ , _ , _ ) => Ok(Box::new(EllipsisExprNode(pos, self.lexer.position, symbol1))),
+            Token::StringToken( _ , _ , _ , _ ) => {
+                let mut nodes = Vec::<Box<Token>>::new();
+                nodes.push(symbol1);
+                loop {
+                    match &*self.lexer.symbol {
+                        Token::StringToken( _ , _ , _ , _ ) => {
+                            let symbol2 = self.lexer.symbol.clone();
+                            self.lexer.advance();
+                            nodes.push(symbol2)
+                        }
+                        _ => break
+                    }
+                }
+                nodes.reverse();
+                Ok(Box::new(StringExprNode(pos, self.lexer.position, nodes)))
+            },
+            Token::LeftParenToken( _ , _ , _ ) => {
+                let right = match &*self.lexer.symbol {
+                    Token::YieldToken( _ , _ , _ ) => Some( self.parse_yield_expr()? ),
+                    Token::RightParenToken( _ , _ , _ ) => None,
+                    _ => Some(self.parse_test_list_comp_expr()?)
+                };
+                match &*self.lexer.symbol {
+                    Token::RightParenToken( _ , _ , _ ) => {
+                        let symbol2 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+                        Ok(Box::new(TupleExprNode(pos, self.lexer.position, symbol1, None, symbol2)))
+                    }
+                    _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ')' in literal!"))))
+                }
+            },
+            Token::LeftSquareBracketToken( _ , _ , _ ) => {
+                let right = match &*self.lexer.symbol {
+                    Token::RightParenToken( _ , _ , _ ) => None,
+                    _ => Some(self.parse_test_list_comp_expr()?)
+                };
+                match &*self.lexer.symbol {
+                    Token::RightSquareBracketToken( _ , _ , _ ) => {
+                        let symbol2 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+                        Ok(Box::new(ListExprNode(pos, self.lexer.position, symbol1, None, symbol2)))
+                    }
+                    _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ')' in literal!"))))
+                }
+            },
+            Token::LeftCurlyBracketToken( _ , _ , _ ) => self.parse_dictionary_set_maker_expr(),
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting valid literal!"))))
+        }
     }
 
     fn parse_test_list_comp_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
