@@ -749,7 +749,35 @@ impl ExpressionRules for PythonCoreParser {
     }
 
     fn parse_test_list_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+        let mut separators = Vec::<Box<Token>>::new();
+
+        nodes.push(self.parse_test_expr()?);
+
+        loop {
+            match &*self.lexer.symbol {
+                Token::CommaToken( _ , _ , _ ) => {
+                    separators.push(self.lexer.symbol.clone());
+                    self.lexer.advance();
+
+                    match &*self.lexer.symbol {
+                        Token::SemicolonToken( _ , _ , _ )|
+                        Token::NewlineToken( _ , _ , _ , _ , _ ) => break,
+                        _ => nodes.push(self.parse_test_expr()?)
+                    }
+                },
+                _ => break
+            }
+        }
+
+        nodes.reverse();
+        separators.reverse();
+
+        Ok(match nodes.len() == 1 && separators.len() == 0 {
+            true => nodes.pop().unwrap(),
+            _ => Box::new(SyntaxNode::TestListExprNode(pos, self.lexer.position, nodes, separators)),
+        })
     }
 
     fn parse_dictionary_set_maker_expr(&mut self, symbol1: Box<Token>) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
