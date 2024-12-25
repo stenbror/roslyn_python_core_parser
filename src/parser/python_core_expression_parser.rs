@@ -2,9 +2,7 @@ use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
-use crate::parser::syntax_nodes::SyntaxNode::{AndExprNode, CompareEqualExprNode, CompareGreaterEqualExprNode, CompareGreaterExprNode, CompareInEqualExprNode, CompareIsExprNode, CompareIsNotExprNode, CompareLessEqualExprNode, CompareLessExprNode, CompareNotEqualExprNode, CompareNotInExprNode, LambdaExprNode, MulExprNode, NamedExprNode, NotTestExprNode, OrExprNode, OrTestExprNode, ShiftLeftExprNode, ShiftRightExprNode, StarExprNode, TestExprNode, XorExprNode};
 use crate::parser::token_nodes::Token;
-use crate::parser::token_nodes::Token::{ShiftLeftToken, ShiftRightToken};
 use super::python_core_parser::PythonCoreParser;
 
 
@@ -57,7 +55,7 @@ impl ExpressionRules for PythonCoreParser {
                 self.lexer.advance();
 
                 let right = self.parse_expr()?;
-                Ok(Box::new(NamedExprNode(pos, self.lexer.position, left, symbol, right)))
+                Ok(Box::new(SyntaxNode::NamedExprNode(pos, self.lexer.position, left, symbol, right)))
             },
             _ => {
                 Ok(left)
@@ -84,7 +82,7 @@ impl ExpressionRules for PythonCoreParser {
                                 let symbol2 = self.lexer.symbol.clone();
                                 self.lexer.advance();
                                 let next = self.parse_test_expr()?;
-                                Ok(Box::new(TestExprNode(pos, self.lexer.position, left, symbol1, right, symbol2, next)))
+                                Ok(Box::new(SyntaxNode::TestExprNode(pos, self.lexer.position, left, symbol1, right, symbol2, next)))
                             },
                             _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting 'else' in test expression!"))))
                         }
@@ -127,7 +125,7 @@ impl ExpressionRules for PythonCoreParser {
                     _ => self.parse_test_no_cond_expr()?
                 };
 
-                Ok(Box::new(LambdaExprNode(pos, self.lexer.position, symbol1, left, symbol2, right, is_conditional)))
+                Ok(Box::new(SyntaxNode::LambdaExprNode(pos, self.lexer.position, symbol1, left, symbol2, right, is_conditional)))
             },
             _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ':' in lambda expression!"))))
         }
@@ -145,7 +143,7 @@ impl ExpressionRules for PythonCoreParser {
 
                     let right = self.parse_and_test_expr()?;
 
-                    left = Box::new(OrTestExprNode(pos, self.lexer.position, left, symbol1, right));
+                    left = Box::new(SyntaxNode::OrTestExprNode(pos, self.lexer.position, left, symbol1, right));
                 },
                 _ => break
             }
@@ -166,7 +164,7 @@ impl ExpressionRules for PythonCoreParser {
 
                     let right = self.parse_not_test_expr()?;
 
-                    left = Box::new(OrTestExprNode(pos, self.lexer.position, left, symbol1, right));
+                    left = Box::new(SyntaxNode::OrTestExprNode(pos, self.lexer.position, left, symbol1, right));
                 },
                 _ => break
             }
@@ -184,7 +182,7 @@ impl ExpressionRules for PythonCoreParser {
                 self.lexer.advance();
 
                 let right = self.parse_not_test_expr()?;
-                Ok(Box::new(NotTestExprNode(pos, self.lexer.position, symbol1, right)))
+                Ok(Box::new(SyntaxNode::NotTestExprNode(pos, self.lexer.position, symbol1, right)))
             },
             _ => self.parse_comparison_expr()
         }
@@ -209,13 +207,13 @@ impl ExpressionRules for PythonCoreParser {
                     let right = self.parse_expr()?;
 
                     left = Box::new(match &*self.lexer.symbol {
-                        Token::LessThanToken( _ , _ , _ ) => CompareLessExprNode(pos, self.lexer.position, left, symbol1, right),
-                        Token::LessOrEqualToken( _ , _ , _ ) => CompareLessEqualExprNode(pos, self.lexer.position, left, symbol1, right),
-                        Token::EqualToken( _ , _ , _ ) => CompareEqualExprNode(pos, self.lexer.position, left, symbol1, right),
-                        Token::GreaterOrEqualToken( _ , _ , _ ) => CompareGreaterEqualExprNode(pos, self.lexer.position, left, symbol1, right),
-                        Token::GreaterThanToken( _ , _ , _ ) => CompareGreaterExprNode(pos, self.lexer.position, left, symbol1, right),
-                        Token::InToken( _ , _ , _ ) => CompareInEqualExprNode(pos, self.lexer.position, left, symbol1, right),
-                        _ => CompareNotEqualExprNode(pos, self.lexer.position, left, symbol1, right)
+                        Token::LessThanToken( _ , _ , _ ) => SyntaxNode::CompareLessExprNode(pos, self.lexer.position, left, symbol1, right),
+                        Token::LessOrEqualToken( _ , _ , _ ) => SyntaxNode::CompareLessEqualExprNode(pos, self.lexer.position, left, symbol1, right),
+                        Token::EqualToken( _ , _ , _ ) => SyntaxNode::CompareEqualExprNode(pos, self.lexer.position, left, symbol1, right),
+                        Token::GreaterOrEqualToken( _ , _ , _ ) => SyntaxNode::CompareGreaterEqualExprNode(pos, self.lexer.position, left, symbol1, right),
+                        Token::GreaterThanToken( _ , _ , _ ) => SyntaxNode::CompareGreaterExprNode(pos, self.lexer.position, left, symbol1, right),
+                        Token::InToken( _ , _ , _ ) => SyntaxNode::CompareInEqualExprNode(pos, self.lexer.position, left, symbol1, right),
+                        _ => SyntaxNode::CompareNotEqualExprNode(pos, self.lexer.position, left, symbol1, right)
                     })
                 },
                 Token::IsToken( _ , _ , _ ) => {
@@ -229,11 +227,11 @@ impl ExpressionRules for PythonCoreParser {
 
                             let right = self.parse_expr()?;
 
-                            left = Box::new(CompareIsNotExprNode(pos, self.lexer.position, left, symbol1, symbol2, right))
+                            left = Box::new(SyntaxNode::CompareIsNotExprNode(pos, self.lexer.position, left, symbol1, symbol2, right))
                         },
                         _ => {
                             let right = self.parse_expr()?;
-                            left = Box::new(CompareIsExprNode(pos, self.lexer.position, left, symbol1, right))
+                            left = Box::new(SyntaxNode::CompareIsExprNode(pos, self.lexer.position, left, symbol1, right))
                         }
                     }
                 },
@@ -248,7 +246,7 @@ impl ExpressionRules for PythonCoreParser {
 
                             let right = self.parse_expr()?;
 
-                            left = Box::new(CompareNotInExprNode(pos, self.lexer.position, left, symbol1, symbol2, right))
+                            left = Box::new(SyntaxNode::CompareNotInExprNode(pos, self.lexer.position, left, symbol1, symbol2, right))
                         },
                         _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting 'in' in 'not in' compare expression!"))))
                     }
@@ -267,7 +265,7 @@ impl ExpressionRules for PythonCoreParser {
 
         let right = self.parse_expr()?;
 
-        Ok(Box::new(StarExprNode(pos, self.lexer.position, symbol1, right)))
+        Ok(Box::new(SyntaxNode::StarExprNode(pos, self.lexer.position, symbol1, right)))
     }
 
     fn parse_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
@@ -282,7 +280,7 @@ impl ExpressionRules for PythonCoreParser {
 
                     let right = self.parse_xor_expr()?;
 
-                    left = Box::new(OrExprNode(pos, self.lexer.position, left, symbol1, right));
+                    left = Box::new(SyntaxNode::OrExprNode(pos, self.lexer.position, left, symbol1, right));
                 },
                 _ => break
             }
@@ -303,7 +301,7 @@ impl ExpressionRules for PythonCoreParser {
 
                     let right = self.parse_and_expr()?;
 
-                    left = Box::new(XorExprNode(pos, self.lexer.position, left, symbol1, right));
+                    left = Box::new(SyntaxNode::XorExprNode(pos, self.lexer.position, left, symbol1, right));
                 },
                 _ => break
             }
@@ -324,7 +322,7 @@ impl ExpressionRules for PythonCoreParser {
 
                     let right = self.parse_shift_expr()?;
 
-                    left = Box::new(AndExprNode(pos, self.lexer.position, left, symbol1, right));
+                    left = Box::new(SyntaxNode::AndExprNode(pos, self.lexer.position, left, symbol1, right));
                 },
                 _ => break
             }
@@ -347,8 +345,8 @@ impl ExpressionRules for PythonCoreParser {
                     let right = self.parse_arith_expr()?;
 
                     left = Box::new(match &*self.lexer.symbol {
-                        Token::ShiftLeftToken( _ , _ , _ ) => ShiftLeftExprNode(pos, self.lexer.position, left, symbol1, right),
-                        _ => ShiftRightExprNode(pos, self.lexer.position, left, symbol1, right)
+                        Token::ShiftLeftToken( _ , _ , _ ) => SyntaxNode::ShiftLeftExprNode(pos, self.lexer.position, left, symbol1, right),
+                        _ => SyntaxNode::ShiftRightExprNode(pos, self.lexer.position, left, symbol1, right)
                     });
                 },
                 _ => break
@@ -359,11 +357,59 @@ impl ExpressionRules for PythonCoreParser {
     }
 
     fn parse_arith_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let mut left = self.parse_term_expr()?;
+
+        loop {
+            match &*self.lexer.symbol {
+                Token::PlusToken( _ , _ , _ ) |
+                Token::MinusToken( _ , _ , _ ) => {
+                    let symbol1 = self.lexer.symbol.clone();
+                    self.lexer.advance();
+
+                    let right = self.parse_term_expr()?;
+
+                    left = Box::new(match &*self.lexer.symbol {
+                        Token::PlusToken( _ , _ , _ ) => SyntaxNode::PlusExprNode(pos, self.lexer.position, left, symbol1, right),
+                        _ => SyntaxNode::MinusExprNode(pos, self.lexer.position, left, symbol1, right)
+                    });
+                },
+                _ => break
+            }
+        }
+
+        Ok(left)
     }
 
     fn parse_term_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let mut left = self.parse_factor_expr()?;
+
+        loop {
+            match &*self.lexer.symbol {
+                Token::MultiplyToken( _ , _ , _ ) |
+                Token::MatricesToken( _ , _ , _ ) |
+                Token::DivideToken( _ , _ , _ ) |
+                Token::ModuloToken( _ , _ , _ ) |
+                Token::FloorDivideToken( _ , _ , _ ) => {
+                    let symbol1 = self.lexer.symbol.clone();
+                    self.lexer.advance();
+
+                    let right = self.parse_factor_expr()?;
+
+                    left = Box::new(match &*self.lexer.symbol {
+                        Token::MultiplyToken( _ , _ , _ ) => SyntaxNode::MulExprNode(pos, self.lexer.position, left, symbol1, right),
+                        Token::MatricesToken( _ , _ , _ ) => SyntaxNode::MatricesExprNode(pos, self.lexer.position, left, symbol1, right),
+                        Token::DivideToken( _ , _ , _ ) => SyntaxNode::DivExprNode(pos, self.lexer.position, left, symbol1, right),
+                        Token::ModuloToken( _ , _ , _ ) => SyntaxNode::ModuloExprNode(pos, self.lexer.position, left, symbol1, right),
+                        _ => SyntaxNode::FloorDivExprNode(pos, self.lexer.position, left, symbol1, right)
+                    });
+                },
+                _ => break
+            }
+        }
+
+        Ok(left)
     }
 
     fn parse_factor_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
