@@ -1,9 +1,11 @@
+use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
-use crate::parser::syntax_nodes::SyntaxNode::{NamedExprNode, TestExprNode};
+use crate::parser::syntax_nodes::SyntaxNode::{LambdaExprNode, NamedExprNode, TestExprNode};
 use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
+
 
 // Trait for expression grammar rule ///////////////////////////////////////////////////////////////
 trait ExpressionRules {
@@ -102,7 +104,32 @@ impl ExpressionRules for PythonCoreParser {
     }
 
     fn parse_lambda_def_expr(&mut self, is_conditional: bool) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol1 = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        let left = match &*self.lexer.symbol {
+            Token::ColonToken( _ , _ , _ ) => {
+                None
+            },
+            _ => Some(self.parse_var_args_list_stmt()?)
+        };
+
+        match &*self.lexer.symbol {
+            Token::ColonToken( _ , _ , _ ) => {
+                let symbol2 = self.lexer.symbol.clone();
+                self.lexer.advance();
+                let right = match is_conditional {
+                    true => {
+                        self.parse_test_expr()?
+                    },
+                    _ => self.parse_test_no_cond_expr()?
+                };
+
+                Ok(Box::new(LambdaExprNode(pos, self.lexer.position, symbol1, left, symbol2, right, is_conditional)))
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ':' in lambda expression!"))))
+        }
     }
 
     fn parse_or_test_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {

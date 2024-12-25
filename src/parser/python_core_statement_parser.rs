@@ -1,10 +1,13 @@
-
+use crate::parser::syntax_error::SyntaxError;
+use crate::parser::syntax_nodes::SyntaxNode;
 use super::python_core_parser::PythonCoreParser;
 
-trait StatementRules {
-
+pub trait StatementRules {
+    fn parse_var_args_list_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
 }
 
 impl StatementRules for PythonCoreParser {
-
+    fn parse_var_args_list_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
 }
