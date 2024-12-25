@@ -2,7 +2,7 @@ use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
-use crate::parser::syntax_nodes::SyntaxNode::{CompareEqualExprNode, CompareGreaterEqualExprNode, CompareGreaterExprNode, CompareInEqualExprNode, CompareIsExprNode, CompareIsNotExprNode, CompareLessEqualExprNode, CompareLessExprNode, CompareNotEqualExprNode, CompareNotInExprNode, LambdaExprNode, MulExprNode, NamedExprNode, NotTestExprNode, OrExprNode, OrTestExprNode, StarExprNode, TestExprNode, XorExprNode};
+use crate::parser::syntax_nodes::SyntaxNode::{AndExprNode, CompareEqualExprNode, CompareGreaterEqualExprNode, CompareGreaterExprNode, CompareInEqualExprNode, CompareIsExprNode, CompareIsNotExprNode, CompareLessEqualExprNode, CompareLessExprNode, CompareNotEqualExprNode, CompareNotInExprNode, LambdaExprNode, MulExprNode, NamedExprNode, NotTestExprNode, OrExprNode, OrTestExprNode, StarExprNode, TestExprNode, XorExprNode};
 use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
@@ -312,7 +312,24 @@ impl ExpressionRules for PythonCoreParser {
     }
 
     fn parse_and_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let mut left = self.parse_shift_expr()?;
+
+        loop {
+            match &*self.lexer.symbol {
+                Token::BitAndToken( _ , _ , _ ) => {
+                    let symbol1 = self.lexer.symbol.clone();
+                    self.lexer.advance();
+
+                    let right = self.parse_shift_expr()?;
+
+                    left = Box::new(AndExprNode(pos, self.lexer.position, left, symbol1, right));
+                },
+                _ => break
+            }
+        }
+
+        Ok(left)
     }
 
     fn parse_shift_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
