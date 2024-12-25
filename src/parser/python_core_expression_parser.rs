@@ -2,7 +2,7 @@ use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
-use crate::parser::syntax_nodes::SyntaxNode::{LambdaExprNode, NamedExprNode, OrExprNode, OrTestExprNode, TestExprNode};
+use crate::parser::syntax_nodes::SyntaxNode::{LambdaExprNode, NamedExprNode, NotTestExprNode, OrExprNode, OrTestExprNode, TestExprNode};
 use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
@@ -154,11 +154,39 @@ impl ExpressionRules for PythonCoreParser {
     }
 
     fn parse_and_test_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let mut left = self.parse_not_test_expr()?;
+
+        loop {
+            match &*self.lexer.symbol {
+                Token::AndToken( _ , _ , _ ) => {
+                    let symbol1 = self.lexer.symbol.clone();
+                    self.lexer.advance();
+
+                    let right = self.parse_not_test_expr()?;
+
+                    left = Box::new(OrTestExprNode(pos, self.lexer.position, left, symbol1, right));
+                },
+                _ => break
+            }
+        }
+
+        Ok(left)
     }
 
     fn parse_not_test_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+
+        match &*self.lexer.symbol {
+            Token::NotToken( _ , _ , _ ) => {
+                let symbol1 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let right = self.parse_not_test_expr()?;
+                Ok(Box::new(NotTestExprNode(pos, self.lexer.position, symbol1, right)))
+            },
+            _ => self.parse_comparison_expr()
+        }
     }
 
     fn parse_comparison_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
