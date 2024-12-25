@@ -2,7 +2,7 @@ use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
-use crate::parser::syntax_nodes::SyntaxNode::SubscriptExprNode;
+use crate::parser::syntax_nodes::SyntaxNode::{SubscriptExprNode, YieldExprNode, YieldFromExprNode};
 use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
@@ -840,7 +840,25 @@ impl ExpressionRules for PythonCoreParser {
     }
 
     fn parse_yield_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol1 = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        match &*self.lexer.symbol {
+            Token::FromToken( _ , _ , _ ) => {
+                let symbol2 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let right = self.parse_test_expr()?;
+
+                Ok(Box::new(YieldFromExprNode(pos, self.lexer.position, symbol1, symbol2, right)))
+            },
+            _ => {
+                let right = self.parse_test_list_star_expr_stmt()?;
+
+                Ok(Box::new(YieldExprNode(pos, self.lexer.position, symbol1, right)))
+            }
+        }
     }
 }
 
