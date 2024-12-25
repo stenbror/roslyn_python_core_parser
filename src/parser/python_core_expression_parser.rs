@@ -2,6 +2,7 @@ use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
+use crate::parser::syntax_nodes::SyntaxNode::SubscriptExprNode;
 use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
@@ -666,7 +667,48 @@ impl ExpressionRules for PythonCoreParser {
     }
 
     fn parse_subscript_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let first = match &*self.lexer.symbol {
+           Token::ColonToken( _ , _ , _ ) => None,
+            _ => Some(self.parse_test_expr()?)
+        };
+        let mut symbol1 : Option<Box<Token>> = None;
+        let mut symbol2 : Option<Box<Token>> = None;
+        let mut second : Option<Box<SyntaxNode>> = None;
+        let mut third : Option<Box<SyntaxNode>> = None;
+
+        match &*self.lexer.symbol {
+            Token::ColonToken( _ , _ , _ ) => {
+                symbol1 = Some(self.lexer.symbol.clone());
+                self.lexer.advance();
+
+                match &*self.lexer.symbol {
+                    Token::ColonToken( _ , _ , _ ) |
+                    Token::CommaToken( _ , _ , _ ) |
+                    Token::RightSquareBracketToken( _ , _ , _ )=> (),
+                    _ => {
+                        second = Some(self.parse_test_expr()?)
+                    }
+                }
+
+                match &*self.lexer.symbol {
+                    Token::ColonToken( _ , _ , _ ) => {
+                        symbol2 = Some(self.lexer.symbol.clone());
+                        self.lexer.advance();
+
+                        match &*self.lexer.symbol {
+                            Token::CommaToken( _ , _ , _ ) |
+                            Token::RightSquareBracketToken( _ , _ , _ ) => (),
+                            _ => third = Some(self.parse_test_expr()?)
+                        }
+                    },
+                    _ => ()
+                }
+            },
+            _ => ()
+        }
+
+        Ok(Box::new(SubscriptExprNode(pos, self.lexer.position, first, symbol1, second, symbol2, third)))
     }
 
     fn parse_expr_list_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
