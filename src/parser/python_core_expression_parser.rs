@@ -2,6 +2,7 @@ use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
+use crate::parser::syntax_nodes::SyntaxNode::{UnaryBitInvertExprNode, UnaryMinusExprNode, UnaryPlusExprNode};
 use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
@@ -413,7 +414,24 @@ impl ExpressionRules for PythonCoreParser {
     }
 
     fn parse_factor_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        match &*self.lexer.symbol {
+            Token::PlusToken( _ , _ , _ ) |
+            Token::MinusToken( _ , _ , _ ) |
+            Token::BitInvertToken( _ , _ , _ ) => {
+                let pos = self.lexer.position;
+                let symbol1 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let right = self.parse_factor_expr()?;
+
+                Ok(Box::new(match &*self.lexer.symbol {
+                    Token::PlusToken( _ , _ , _ ) => UnaryPlusExprNode(pos, self.lexer.position, symbol1, right),
+                    Token::MinusToken( _ , _ , _ ) => UnaryMinusExprNode(pos, self.lexer.position, symbol1, right),
+                    _ => UnaryBitInvertExprNode(pos, self.lexer.position, symbol1, right),
+                }))
+            },
+            _ => self.parse_power_expr()
+        }
     }
 
     fn parse_power_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
