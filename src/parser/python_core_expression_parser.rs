@@ -2,7 +2,7 @@ use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
-use crate::parser::syntax_nodes::SyntaxNode::{UnaryBitInvertExprNode, UnaryMinusExprNode, UnaryPlusExprNode};
+use crate::parser::syntax_nodes::SyntaxNode::{PowerExprNode, UnaryBitInvertExprNode, UnaryMinusExprNode, UnaryPlusExprNode};
 use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
@@ -435,7 +435,19 @@ impl ExpressionRules for PythonCoreParser {
     }
 
     fn parse_power_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let left = self.parse_await_atom_expr()?;
+
+        match &*self.lexer.symbol {
+            Token::PowerToken( _ , _ , _ ) => {
+                let symbol1 = self.lexer.symbol.clone();
+                self.lexer.advance();
+                let right = self.parse_await_atom_expr()?;
+
+                Ok(Box::new(PowerExprNode(pos, self.lexer.position, left, symbol1, right)))
+            }
+            _ => Ok(left)
+        }
     }
 
     fn parse_await_atom_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {

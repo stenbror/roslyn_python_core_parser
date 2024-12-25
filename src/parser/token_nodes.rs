@@ -61,6 +61,7 @@ pub enum Token {
     GreaterOrEqualToken(u32, u32, Vec<Box<Trivia>>),
     EqualToken(u32, u32, Vec<Box<Trivia>>),
     NotEqualToken(u32, u32, Vec<Box<Trivia>>),
+    PowerToken(u32, u32, Vec<Box<Trivia>>),
     LeftParenToken(u32, u32, Vec<Box<Trivia>>),
     RightParenToken(u32, u32, Vec<Box<Trivia>>),
     LeftSquareBracketToken(u32, u32, Vec<Box<Trivia>>),
