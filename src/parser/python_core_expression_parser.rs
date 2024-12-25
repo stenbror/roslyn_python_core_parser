@@ -2,7 +2,6 @@ use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
-use crate::parser::syntax_nodes::SyntaxNode::{AtomExprNode, EllipsisExprNode, FalseExprNode, ListExprNode, NameExprNode, NoneExprNode, NumberExprNode, PowerExprNode, StringExprNode, TestListComprehensionExprNode, TrailerCallExprNode, TrailerDotNameExprNode, TrailerIndexExprNode, TrueExprNode, TupleExprNode, UnaryBitInvertExprNode, UnaryMinusExprNode, UnaryPlusExprNode};
 use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
@@ -424,9 +423,9 @@ impl ExpressionRules for PythonCoreParser {
                 let right = self.parse_factor_expr()?;
 
                 Ok(Box::new(match &*self.lexer.symbol {
-                    Token::PlusToken( _ , _ , _ ) => UnaryPlusExprNode(pos, self.lexer.position, symbol1, right),
-                    Token::MinusToken( _ , _ , _ ) => UnaryMinusExprNode(pos, self.lexer.position, symbol1, right),
-                    _ => UnaryBitInvertExprNode(pos, self.lexer.position, symbol1, right),
+                    Token::PlusToken( _ , _ , _ ) => SyntaxNode::UnaryPlusExprNode(pos, self.lexer.position, symbol1, right),
+                    Token::MinusToken( _ , _ , _ ) => SyntaxNode::UnaryMinusExprNode(pos, self.lexer.position, symbol1, right),
+                    _ => SyntaxNode::UnaryBitInvertExprNode(pos, self.lexer.position, symbol1, right),
                 }))
             },
             _ => self.parse_power_expr()
@@ -443,7 +442,7 @@ impl ExpressionRules for PythonCoreParser {
                 self.lexer.advance();
                 let right = self.parse_await_atom_expr()?;
 
-                Ok(Box::new(PowerExprNode(pos, self.lexer.position, left, symbol1, right)))
+                Ok(Box::new(SyntaxNode::PowerExprNode(pos, self.lexer.position, left, symbol1, right)))
             }
             _ => Ok(left)
         }
@@ -478,7 +477,7 @@ impl ExpressionRules for PythonCoreParser {
                             let symbol3 = self.lexer.symbol.clone();
                             self.lexer.advance();
 
-                            trailers.push(Box::new(TrailerCallExprNode(pos, self.lexer.position, symbol2, next, symbol3)))
+                            trailers.push(Box::new(SyntaxNode::TrailerCallExprNode(pos, self.lexer.position, symbol2, next, symbol3)))
                         },
                         _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ')' in call trailer!"))))
                     }
@@ -494,7 +493,7 @@ impl ExpressionRules for PythonCoreParser {
                             let symbol3 = self.lexer.symbol.clone();
                             self.lexer.advance();
 
-                            trailers.push(Box::new(TrailerIndexExprNode(pos, self.lexer.position, symbol2, next, symbol3)))
+                            trailers.push(Box::new(SyntaxNode::TrailerIndexExprNode(pos, self.lexer.position, symbol2, next, symbol3)))
                         },
                         _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ']' in index trailer!"))))
                     }
@@ -506,7 +505,7 @@ impl ExpressionRules for PythonCoreParser {
                     match &*self.lexer.symbol {
                         Token::NameToken( _ , _ , _ , _ ) => {
                             let next = self.parse_atom_expr()?;
-                            trailers.push(Box::new(TrailerDotNameExprNode(pos, self.lexer.position, symbol2, next)))
+                            trailers.push(Box::new(SyntaxNode::TrailerDotNameExprNode(pos, self.lexer.position, symbol2, next)))
                         }
                         _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting NAME literal after '.' in trailer!"))))
                     }
@@ -518,7 +517,7 @@ impl ExpressionRules for PythonCoreParser {
         trailers.reverse();
 
         match symbol1.is_none() && trailers.is_empty() {
-            true => Ok(Box::new(AtomExprNode(pos, self.lexer.position, symbol1, right, trailers))),
+            true => Ok(Box::new(SyntaxNode::AtomExprNode(pos, self.lexer.position, symbol1, right, trailers))),
             _ => Ok(right)
         }
     }
@@ -529,12 +528,12 @@ impl ExpressionRules for PythonCoreParser {
         self.lexer.advance();
 
         match &*self.lexer.symbol {
-            Token::NameToken( _ , _ , _ , _ ) => Ok(Box::new(NameExprNode(pos, self.lexer.position, symbol1))),
-            Token::NumberToken( _ , _ , _ , _ ) => Ok(Box::new(NumberExprNode(pos, self.lexer.position, symbol1))),
-            Token::NoneToken( _ , _ , _ ) => Ok(Box::new(NoneExprNode(pos, self.lexer.position, symbol1))),
-            Token::FalseToken( _ , _ , _ ) => Ok(Box::new(FalseExprNode(pos, self.lexer.position, symbol1))),
-            Token::TrueToken( _ , _ , _ ) => Ok(Box::new(TrueExprNode(pos, self.lexer.position, symbol1))),
-            Token::EllipsisToken( _ , _ , _ ) => Ok(Box::new(EllipsisExprNode(pos, self.lexer.position, symbol1))),
+            Token::NameToken( _ , _ , _ , _ ) => Ok(Box::new(SyntaxNode::NameExprNode(pos, self.lexer.position, symbol1))),
+            Token::NumberToken( _ , _ , _ , _ ) => Ok(Box::new(SyntaxNode::NumberExprNode(pos, self.lexer.position, symbol1))),
+            Token::NoneToken( _ , _ , _ ) => Ok(Box::new(SyntaxNode::NoneExprNode(pos, self.lexer.position, symbol1))),
+            Token::FalseToken( _ , _ , _ ) => Ok(Box::new(SyntaxNode::FalseExprNode(pos, self.lexer.position, symbol1))),
+            Token::TrueToken( _ , _ , _ ) => Ok(Box::new(SyntaxNode::TrueExprNode(pos, self.lexer.position, symbol1))),
+            Token::EllipsisToken( _ , _ , _ ) => Ok(Box::new(SyntaxNode::EllipsisExprNode(pos, self.lexer.position, symbol1))),
             Token::StringToken( _ , _ , _ , _ ) => {
                 let mut nodes = Vec::<Box<Token>>::new();
                 nodes.push(symbol1);
@@ -549,7 +548,7 @@ impl ExpressionRules for PythonCoreParser {
                     }
                 }
                 nodes.reverse();
-                Ok(Box::new(StringExprNode(pos, self.lexer.position, nodes)))
+                Ok(Box::new(SyntaxNode::StringExprNode(pos, self.lexer.position, nodes)))
             },
             Token::LeftParenToken( _ , _ , _ ) => {
                 let right = match &*self.lexer.symbol {
@@ -561,7 +560,7 @@ impl ExpressionRules for PythonCoreParser {
                     Token::RightParenToken( _ , _ , _ ) => {
                         let symbol2 = self.lexer.symbol.clone();
                         self.lexer.advance();
-                        Ok(Box::new(TupleExprNode(pos, self.lexer.position, symbol1, None, symbol2)))
+                        Ok(Box::new(SyntaxNode::TupleExprNode(pos, self.lexer.position, symbol1, None, symbol2)))
                     }
                     _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ')' in literal!"))))
                 }
@@ -575,7 +574,7 @@ impl ExpressionRules for PythonCoreParser {
                     Token::RightSquareBracketToken( _ , _ , _ ) => {
                         let symbol2 = self.lexer.symbol.clone();
                         self.lexer.advance();
-                        Ok(Box::new(ListExprNode(pos, self.lexer.position, symbol1, None, symbol2)))
+                        Ok(Box::new(SyntaxNode::ListExprNode(pos, self.lexer.position, symbol1, None, symbol2)))
                     }
                     _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ')' in literal!"))))
                 }
@@ -629,7 +628,7 @@ impl ExpressionRules for PythonCoreParser {
 
         Ok(match nodes.len() == 1 && separators.len() == 0 {
             true => nodes.pop().unwrap(),
-            _ => Box::new(TestListComprehensionExprNode(pos, self.lexer.position, nodes, separators)),
+            _ => Box::new(SyntaxNode::TestListComprehensionExprNode(pos, self.lexer.position, nodes, separators)),
         })
     }
 
