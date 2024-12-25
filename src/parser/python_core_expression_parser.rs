@@ -820,7 +820,11 @@ impl ExpressionRules for PythonCoreParser {
     }
 
     fn parse_comp_iter_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        match &*self.lexer.symbol {
+            Token::ForToken( _ , _ , _ ) => self.parse_sync_comp_for_expr(),
+            Token::AsyncToken( _ , _ , _ ) => self.parse_comp_for_expr(),
+            _ => self.parse_comp_if_expr()
+        }
     }
 
     fn parse_sync_comp_for_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
