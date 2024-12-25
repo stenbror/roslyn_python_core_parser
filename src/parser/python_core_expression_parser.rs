@@ -2,7 +2,7 @@ use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
-use crate::parser::syntax_nodes::SyntaxNode::{CompIfExprNode, SubscriptExprNode, YieldExprNode, YieldFromExprNode};
+use crate::parser::syntax_nodes::SyntaxNode::{CompForExprNode, CompIfExprNode, SubscriptExprNode, YieldExprNode, YieldFromExprNode};
 use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
@@ -832,7 +832,22 @@ impl ExpressionRules for PythonCoreParser {
     }
 
     fn parse_comp_for_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        let right = self.parse_sync_comp_for_expr()?;
+
+        let next = match &*self.lexer.symbol {
+            Token::ForToken( _ , _ , _ ) |
+            Token::IfToken( _ , _ , _ ) |
+            Token::AsyncToken( _ , _ , _ ) => {
+                Some(self.parse_comp_iter_expr()?)
+            },
+            _ => None
+        };
+
+        Ok(Box::new(CompForExprNode(pos, self.lexer.position, symbol, right, next)))
     }
 
     fn parse_comp_if_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {

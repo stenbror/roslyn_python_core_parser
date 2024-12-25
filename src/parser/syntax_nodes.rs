@@ -66,7 +66,7 @@ pub enum SyntaxNode {
     MulArgumentExprNode(u32, u32, Box<Token>, Box<SyntaxNode>),
     PowerArgumentExprNode(u32, u32, Box<Token>, Box<SyntaxNode>),
     SyncCompForExprNode(u32, u32, Box<Token>, Box<SyntaxNode>, Box<Token>, Option<Box<SyntaxNode>>),
-    CompForExprNode(u32, u32, Box<Token>, Option<Box<SyntaxNode>>),
+    CompForExprNode(u32, u32, Box<Token>, Box<SyntaxNode>, Option<Box<SyntaxNode>>),
     CompIfExprNode(u32, u32, Box<Token>, Box<SyntaxNode>, Option<Box<SyntaxNode>>),
     YieldExprNode(u32, u32, Box<Token>, Box<SyntaxNode>),
     YieldFromExprNode(u32, u32, Box<Token>, Box<Token>, Box<SyntaxNode>),
