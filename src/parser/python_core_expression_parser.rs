@@ -2,7 +2,7 @@ use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
-use crate::parser::syntax_nodes::SyntaxNode::{AtomExprNode, EllipsisExprNode, FalseExprNode, ListExprNode, NameExprNode, NoneExprNode, NumberExprNode, PowerExprNode, StringExprNode, TrailerCallExprNode, TrailerDotNameExprNode, TrailerIndexExprNode, TrueExprNode, TupleExprNode, UnaryBitInvertExprNode, UnaryMinusExprNode, UnaryPlusExprNode};
+use crate::parser::syntax_nodes::SyntaxNode::{AtomExprNode, EllipsisExprNode, FalseExprNode, ListExprNode, NameExprNode, NoneExprNode, NumberExprNode, PowerExprNode, StringExprNode, TestListComprehensionExprNode, TrailerCallExprNode, TrailerDotNameExprNode, TrailerIndexExprNode, TrueExprNode, TupleExprNode, UnaryBitInvertExprNode, UnaryMinusExprNode, UnaryPlusExprNode};
 use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
@@ -586,7 +586,51 @@ impl ExpressionRules for PythonCoreParser {
     }
 
     fn parse_test_list_comp_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+        let mut separators = Vec::<Box<Token>>::new();
+
+        nodes.push(match &*self.lexer.symbol {
+            Token::MultiplyToken( _ , _ , _ ) => self.parse_star_expr()?,
+            _ => self.parse_named_expr()?
+        });
+
+        match &*self.lexer.symbol {
+            Token::ForToken( _ , _ , _ ) |
+            Token::AsyncToken( _ , _ , _ ) => {
+                nodes.push(self.parse_comp_for_expr()?)
+            },
+            _ => {
+                loop {
+                    match &*self.lexer.symbol {
+                        Token::CommaToken( _ , _ , _ ) => {
+                            separators.push(self.lexer.symbol.clone());
+                            self.lexer.advance();
+
+                            match &*self.lexer.symbol {
+                                Token::RightParenToken( _ , _ , _ ) |
+                                Token::RightSquareBracketToken( _ , _ , _ ) => break,
+                                _ => {
+                                    nodes.push(match &*self.lexer.symbol {
+                                        Token::MultiplyToken( _ , _ , _ ) => self.parse_star_expr()?,
+                                        _ => self.parse_named_expr()?
+                                    })
+                                }
+                            }
+                        },
+                        _ => break
+                    }
+                }
+            }
+        }
+
+        nodes.reverse();
+        separators.reverse();
+
+        Ok(match nodes.len() == 1 && separators.len() == 0 {
+            true => nodes.pop().unwrap(),
+            _ => Box::new(TestListComprehensionExprNode(pos, self.lexer.position, nodes, separators)),
+        })
     }
 
     fn parse_subscript_list_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
