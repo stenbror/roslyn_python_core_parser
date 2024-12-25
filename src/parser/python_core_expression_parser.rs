@@ -270,7 +270,24 @@ impl ExpressionRules for PythonCoreParser {
     }
 
     fn parse_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let mut left = self.parse_xor_expr()?;
+
+        loop {
+            match &*self.lexer.symbol {
+                Token::BitOrToken( _ , _ , _ ) => {
+                    let symbol1 = self.lexer.symbol.clone();
+                    self.lexer.advance();
+
+                    let right = self.parse_xor_expr()?;
+
+                    left = Box::new(OrExprNode(pos, self.lexer.position, left, symbol1, right));
+                },
+                _ => break
+            }
+        }
+
+        Ok(left)
     }
 
     fn parse_xor_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
