@@ -2,7 +2,7 @@ use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
-use crate::parser::syntax_nodes::SyntaxNode::{LambdaExprNode, NamedExprNode, NotTestExprNode, OrExprNode, OrTestExprNode, TestExprNode};
+use crate::parser::syntax_nodes::SyntaxNode::{CompareEqualExprNode, CompareGreaterEqualExprNode, CompareGreaterExprNode, CompareInEqualExprNode, CompareIsExprNode, CompareIsNotExprNode, CompareLessEqualExprNode, CompareLessExprNode, CompareNotEqualExprNode, CompareNotInExprNode, LambdaExprNode, NamedExprNode, NotTestExprNode, OrExprNode, OrTestExprNode, TestExprNode};
 use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
@@ -190,7 +190,73 @@ impl ExpressionRules for PythonCoreParser {
     }
 
     fn parse_comparison_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let mut left = self.parse_expr()?;
+
+        loop {
+            match &*self.lexer.symbol {
+                Token::LessThanToken( _ , _ , _ ) |
+                Token::LessOrEqualToken( _ , _ , _ ) |
+                Token::EqualToken( _ , _ , _ ) |
+                Token::GreaterOrEqualToken( _ , _ , _ ) |
+                Token::GreaterThanToken( _ , _ , _ ) |
+                Token::NotEqualToken( _ , _ , _ ) |
+                Token::InToken( _ , _ , _ ) => {
+                    let symbol1 = self.lexer.symbol.clone();
+                    self.lexer.advance();
+
+                    let right = self.parse_expr()?;
+
+                    left = Box::new(match &*self.lexer.symbol {
+                        Token::LessThanToken( _ , _ , _ ) => CompareLessExprNode(pos, self.lexer.position, left, symbol1, right),
+                        Token::LessOrEqualToken( _ , _ , _ ) => CompareLessEqualExprNode(pos, self.lexer.position, left, symbol1, right),
+                        Token::EqualToken( _ , _ , _ ) => CompareEqualExprNode(pos, self.lexer.position, left, symbol1, right),
+                        Token::GreaterOrEqualToken( _ , _ , _ ) => CompareGreaterEqualExprNode(pos, self.lexer.position, left, symbol1, right),
+                        Token::GreaterThanToken( _ , _ , _ ) => CompareGreaterExprNode(pos, self.lexer.position, left, symbol1, right),
+                        Token::InToken( _ , _ , _ ) => CompareInEqualExprNode(pos, self.lexer.position, left, symbol1, right),
+                        _ => CompareNotEqualExprNode(pos, self.lexer.position, left, symbol1, right)
+                    })
+                },
+                Token::IsToken( _ , _ , _ ) => {
+                    let symbol1 = self.lexer.symbol.clone();
+                    self.lexer.advance();
+
+                    match &*self.lexer.symbol {
+                        Token::NotToken( _ , _ , _ ) => {
+                            let symbol2 = self.lexer.symbol.clone();
+                            self.lexer.advance();
+
+                            let right = self.parse_expr()?;
+
+                            left = Box::new(CompareIsNotExprNode(pos, self.lexer.position, left, symbol1, symbol2, right))
+                        },
+                        _ => {
+                            let right = self.parse_expr()?;
+                            left = Box::new(CompareIsExprNode(pos, self.lexer.position, left, symbol1, right))
+                        }
+                    }
+                },
+                Token::NotToken( _ , _ , _ ) => {
+                    let symbol1 = self.lexer.symbol.clone();
+                    self.lexer.advance();
+
+                    match &*self.lexer.symbol {
+                        Token::InToken( _ , _ , _ ) => {
+                            let symbol2 = self.lexer.symbol.clone();
+                            self.lexer.advance();
+
+                            let right = self.parse_expr()?;
+
+                            left = Box::new(CompareNotInExprNode(pos, self.lexer.position, left, symbol1, right))
+                        },
+                        _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting 'in' in 'not in' compare expression!"))))
+                    }
+                }
+                _ => break
+            }
+        }
+
+        Ok(left)
     }
 
     fn parse_star_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {

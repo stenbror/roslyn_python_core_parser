@@ -20,7 +20,7 @@ pub enum SyntaxNode {
     CompareInEqualExprNode(u32, u32, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>),
     CompareNotInExprNode(u32, u32, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>),
     CompareIsExprNode(u32, u32, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>),
-    CompareIsNotExprNode(u32, u32, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>),
+    CompareIsNotExprNode(u32, u32, Box<SyntaxNode>, Box<Token>, Box<Token>, Box<SyntaxNode>),
     OrExprNode(u32, u32, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>),
     XorExprNode(u32, u32, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>),
     AndExprNode(u32, u32, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>),
