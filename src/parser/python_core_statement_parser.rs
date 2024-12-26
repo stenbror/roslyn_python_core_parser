@@ -398,7 +398,25 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_dotted_as_name_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let left = self.parse_dotted_name_stmt()?;
+
+        match &*self.lexer.symbol {
+            Token::AsToken( _ , _ , _ ) => {
+                let symbol = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                match &*self.lexer.symbol {
+                    Token::NameToken( _ , _ , _ , _ ) => {
+                        let right = self.parse_atom_expr()?;
+
+                        Ok(Box::new(SyntaxNode::DottedAsNameStmtNode(pos, self.lexer.position, left, symbol, right)))
+                    },
+                    _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting NAME literal after 'as' in import statement!"))))
+                }
+            },
+            _ => Ok(left)
+        }
     }
 
     fn parse_import_as_names_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
