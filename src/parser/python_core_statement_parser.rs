@@ -105,7 +105,21 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_small_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        match &*self.lexer.symbol {
+            Token::DelToken( _ , _ , _ ) => self.parse_del_stmt(),
+            Token::PassToken( _ , _ , _ ) => self.parse_pass_stmt(),
+            Token::BreakToken( _ , _ , _ ) |
+            Token::ContinueToken( _ , _ , _ ) |
+            Token::ReturnToken( _ , _ , _ ) |
+            Token::RaiseToken( _ , _ , _ ) |
+            Token::YieldToken( _ , _ , _ ) => self.parse_flow_stmt(),
+            Token::ImportToken( _ , _ , _ ) |
+            Token::FromToken( _ , _ , _ ) => self.parse_import_stmt(),
+            Token::GlobalToken( _ , _ , _ ) => self.parse_global_stmt(),
+            Token::NonlocalToken( _ , _ , _ ) => self.parse_nonlocal_stmt(),
+            Token::AssertToken( _ , _ , _ ) => self.parse_assert_stmt(),
+            _ => self.parse_expr_stmt()
+        }
     }
 
     fn parse_expr_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
