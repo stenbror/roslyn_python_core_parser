@@ -104,7 +104,7 @@ pub enum SyntaxNode {
     ShiftRightAssignStmtNode(u32, u32, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>),
     PowerAssignStmtNode(u32, u32, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>),
     AnnAssignStmtNode(u32, u32, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>, Option<Box<Token>>, Option<Box<SyntaxNode>>),
-    AssignmentStmtNode(u32, u32, Box<SyntaxNode>, Box<Token>, Option<Box<SyntaxNode>>, Option<Box<Token>>, Option<Box<SyntaxNode>>),
+    AssignmentStmtNode(u32, u32, Box<SyntaxNode>, Vec<Box<SyntaxNode>>, Option<Box<Token>>),
     AssignmentElementStmtNode(u32, u32, Box<Token>, Box<SyntaxNode>),
     AsyncStmtNode(u32, u32, Box<Token>, Box<SyntaxNode>),
     IfStmtNode(u32, u32, Box<Token>, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>, Vec<Box<SyntaxNode>>, Option<Box<SyntaxNode>>),

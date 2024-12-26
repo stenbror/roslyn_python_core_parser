@@ -7,7 +7,7 @@ use super::python_core_parser::{BlockGrammarRules, PythonCoreParser};
 
 
 // Trait for expression grammar rule ///////////////////////////////////////////////////////////////
-trait ExpressionRules {
+pub(crate) trait ExpressionRules {
     fn parse_named_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_test_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_test_no_cond_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;

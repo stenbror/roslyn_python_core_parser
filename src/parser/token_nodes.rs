@@ -81,6 +81,7 @@ pub enum Token {
     DivideAssignToken(u32, u32, Vec<Box<Trivia>>),
     ModuloAssignToken(u32, u32, Vec<Box<Trivia>>),
     AndAssignToken(u32, u32, Vec<Box<Trivia>>),
+    XorAssignToken(u32, u32, Vec<Box<Trivia>>),
     OrAssignToken(u32, u32, Vec<Box<Trivia>>),
     FloorDivideAssignToken(u32, u32, Vec<Box<Trivia>>),
     MatricesAssignToken(u32, u32, Vec<Box<Trivia>>),

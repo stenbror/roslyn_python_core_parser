@@ -1,5 +1,6 @@
 use crate::parser::python_core_match_parser::MatchPatternRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
+use crate::parser::python_core_expression_parser::ExpressionRules;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
 use crate::parser::token_nodes::Token;
@@ -123,7 +124,113 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_expr_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let mut left = self.parse_test_list_star_expr_stmt()?;
+
+        match &*self.lexer.symbol {
+            Token::PlusAssignToken( _ , _ , _ ) |
+            Token::MinusAssignToken( _ , _ , _ ) |
+            Token::MultiplyAssignToken( _ , _ , _ ) |
+            Token::MatricesAssignToken( _ , _ , _ ) |
+            Token::DivideAssignToken( _ , _ , _ ) |
+            Token::ModuloAssignToken( _ , _ , _ ) |
+            Token::AndAssignToken( _ , _ , _ ) |
+            Token::OrAssignToken( _ , _ , _ ) |
+            Token::XorAssignToken( _ , _ , _ ) |
+            Token::ShiftLeftAssignToken( _ , _ , _ ) |
+            Token::ShiftRightAssignToken( _ , _ , _ ) |
+            Token::FloorDivideAssignToken( _ , _ , _ ) |
+            Token::PowerAssignToken( _ , _ , _ ) => {
+                let symbol = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let right = match &*self.lexer.symbol {
+                    Token::YieldToken( _ , _ , _ ) => self.parse_yield_stmt()?,
+                    _ => self.parse_test_list_expr()?
+                };
+
+                match &*symbol {
+                    Token::PlusAssignToken( _ , _ , _ ) => Ok(Box::new(SyntaxNode::PlusAssignStmtNode(pos, self.lexer.position, left, symbol, right))),
+                    Token::MinusAssignToken( _ , _ , _ ) => Ok(Box::new(SyntaxNode::MinusAssignStmtNode(pos, self.lexer.position, left, symbol, right))),
+                    Token::MultiplyAssignToken( _ , _ , _ ) => Ok(Box::new(SyntaxNode::MulAssignStmtNode(pos, self.lexer.position, left, symbol, right))),
+                    Token::MatricesAssignToken( _ , _ , _ ) => Ok(Box::new(SyntaxNode::MatricesAssignStmtNode(pos, self.lexer.position, left, symbol, right))),
+                    Token::DivideAssignToken( _ , _ , _ ) => Ok(Box::new(SyntaxNode::DivAssignStmtNode(pos, self.lexer.position, left, symbol, right))),
+                    Token::ModuloAssignToken( _ , _ , _ ) => Ok(Box::new(SyntaxNode::ModuloAssignStmtNode(pos, self.lexer.position, left, symbol, right))),
+                    Token::AndAssignToken( _ , _ , _ ) => Ok(Box::new(SyntaxNode::BitAndAssignStmtNode(pos, self.lexer.position, left, symbol, right))),
+                    Token::OrAssignToken( _ , _ , _ ) => Ok(Box::new(SyntaxNode::BitOrAssignStmtNode(pos, self.lexer.position, left, symbol, right))),
+                    Token::XorAssignToken( _ , _ , _ ) => Ok(Box::new(SyntaxNode::BitXorAssignStmtNode(pos, self.lexer.position, left, symbol, right))),
+                    Token::ShiftLeftAssignToken( _ , _ , _ ) => Ok(Box::new(SyntaxNode::ShiftLeftAssignStmtNode(pos, self.lexer.position, left, symbol, right))),
+                    Token::ShiftRightAssignToken( _ , _ , _ ) => Ok(Box::new(SyntaxNode::ShiftRightAssignStmtNode(pos, self.lexer.position, left, symbol, right))),
+                    Token::FloorDivideAssignToken( _ , _ , _ ) => Ok(Box::new(SyntaxNode::FloorDivAssignStmtNode(pos, self.lexer.position, left, symbol, right))),
+                    _ => Ok(Box::new(SyntaxNode::PowerAssignStmtNode(pos, self.lexer.position, left, symbol, right)))
+                }
+            },
+            Token::ColonToken( _ , _ , _ ) => {
+                let symbol = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let right = self.parse_test_expr()?;
+
+                match &*self.lexer.symbol {
+                    Token::AssignToken( _ , _ , _ ) => {
+                        let symbol2 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+
+                        let next = match &*self.lexer.symbol {
+                            Token::YieldToken( _ , _ , _ ) => self.parse_yield_stmt()?,
+                            _ => self.parse_test_list_star_expr_stmt()?
+                        };
+
+                        Ok(Box::new(SyntaxNode::AnnAssignStmtNode(pos, self.lexer.position, left, symbol, right, Some(symbol2), Some(next))))
+                    },
+                    _ => Ok(Box::new(SyntaxNode::AnnAssignStmtNode(pos, self.lexer.position, left, symbol, right, None, None)))
+                }
+            },
+            Token::AssignToken( _ , _ , _ ) => {
+                let mut nodes = Vec::<Box<SyntaxNode>>::new();
+
+                let mut symbol = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let right = match &*self.lexer.symbol {
+                    Token::YieldToken( _ , _ , _ ) => self.parse_yield_stmt()?,
+                    _ => self.parse_test_list_star_expr_stmt()?
+                };
+
+                nodes.push(Box::new(SyntaxNode::AssignmentElementStmtNode(pos, self.lexer.position, symbol, right)));
+
+                loop {
+                    match &*self.lexer.symbol {
+                        Token::AssertToken( _ , _ , _ ) => {
+                            symbol = self.lexer.symbol.clone();
+                            self.lexer.advance();
+
+                            let right = match &*self.lexer.symbol {
+                                Token::YieldToken( _ , _ , _ ) => self.parse_yield_stmt()?,
+                                _ => self.parse_test_list_star_expr_stmt()?
+                            };
+
+                            nodes.push(Box::new(SyntaxNode::AssignmentElementStmtNode(pos, self.lexer.position, symbol, right)));
+                        },
+                        _ => break
+                    }
+                }
+
+                let tc = match &*self.lexer.symbol {
+                    Token::TypeCommentToken( _ , _ , _ , _ ) => {
+                        let symbol2 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+                        Some(symbol2)
+                    },
+                    _ => None
+                };
+
+                nodes.reverse();
+
+                Ok(Box::new(SyntaxNode::AssignmentStmtNode(pos, self.lexer.position, left, nodes, tc)))
+            },
+            _ => Ok(left)
+        }
     }
 
     fn parse_test_list_star_expr_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
