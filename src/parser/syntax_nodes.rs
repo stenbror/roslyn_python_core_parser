@@ -62,7 +62,7 @@ pub enum SyntaxNode {
     ExprListExprNode(u32, u32, Vec<Box<SyntaxNode>>, Vec<Box<Token>>),
     TestListExprNode(u32, u32, Vec<Box<SyntaxNode>>, Vec<Box<Token>>),
     ArgListExprNode(u32, u32, Vec<Box<SyntaxNode>>, Vec<Box<Token>>),
-    ArgumentExprNode(u32, u32, Box<SyntaxNode>, Option<Box<Token>>, Option<Box<SyntaxNode>>),
+    ArgumentExprNode(u32, u32, Option<Box<SyntaxNode>>, Option<Box<Token>>, Option<Box<SyntaxNode>>),
     MulArgumentExprNode(u32, u32, Box<Token>, Box<SyntaxNode>),
     PowerArgumentExprNode(u32, u32, Box<Token>, Box<SyntaxNode>),
     SyncCompForExprNode(u32, u32, Box<Token>, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>, Option<Box<SyntaxNode>>),

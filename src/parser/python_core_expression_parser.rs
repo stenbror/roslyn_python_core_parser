@@ -2,6 +2,7 @@ use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
+use crate::parser::syntax_nodes::SyntaxNode::ArgumentExprNode;
 use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
@@ -815,7 +816,43 @@ impl ExpressionRules for PythonCoreParser {
     }
 
     fn parse_argument_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+
+        match &*self.lexer.symbol {
+            Token::MultiplyToken( _ , _ , _ ) |
+            Token::PowerToken( _ , _ , _ ) => {
+                let symbol = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                match &*self.lexer.symbol {
+                    Token::NameToken( _ , _ , _ , _ ) => {
+                        let right = self.parse_atom_expr()?;
+                        Ok(Box::new(ArgumentExprNode(pos, self.lexer.position, None, Some(symbol), Some(right))))
+                    },
+                    _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting NAME literal in argument after '*' or '**'!"))))
+                }
+            },
+            Token::NameToken( _ , _ , _ , _ ) => {
+                let left = self.parse_atom_expr()?;
+
+                match &*self.lexer.symbol {
+                    Token::ColonToken( _ , _ , _ ) |
+                    Token::AssignToken( _ , _ , _ )=> {
+                        let symbol = self.lexer.symbol.clone();
+                        self.lexer.advance();
+                        let right = self.parse_atom_expr()?;
+                        Ok(Box::new(ArgumentExprNode(pos, self.lexer.position, Some(left), Some(symbol), Some(right))))
+                    },
+                    Token::AsyncToken( _ , _ , _ ) |
+                    Token::ForToken( _ , _ , _ )=> {
+                        let  right = self.parse_comp_for_expr()?;
+                        Ok(Box::new(ArgumentExprNode(pos, self.lexer.position, Some(left), None, Some(right))))
+                    },
+                    _ => Ok(left)
+                }
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting NAME literal in argument!"))))
+        }
     }
 
     fn parse_comp_iter_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
