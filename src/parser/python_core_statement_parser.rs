@@ -19,7 +19,6 @@ pub trait StatementRules {
     fn parse_continue_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_return_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_raise_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
-    fn parse_yield_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_import_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_import_name_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_import_from_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
@@ -145,7 +144,7 @@ impl StatementRules for PythonCoreParser {
                 self.lexer.advance();
 
                 let right = match &*self.lexer.symbol {
-                    Token::YieldToken( _ , _ , _ ) => self.parse_yield_stmt()?,
+                    Token::YieldToken( _ , _ , _ ) => self.parse_yield_expr()?,
                     _ => self.parse_test_list_expr()?
                 };
 
@@ -177,7 +176,7 @@ impl StatementRules for PythonCoreParser {
                         self.lexer.advance();
 
                         let next = match &*self.lexer.symbol {
-                            Token::YieldToken( _ , _ , _ ) => self.parse_yield_stmt()?,
+                            Token::YieldToken( _ , _ , _ ) => self.parse_yield_expr()?,
                             _ => self.parse_test_list_star_expr_stmt()?
                         };
 
@@ -193,7 +192,7 @@ impl StatementRules for PythonCoreParser {
                 self.lexer.advance();
 
                 let right = match &*self.lexer.symbol {
-                    Token::YieldToken( _ , _ , _ ) => self.parse_yield_stmt()?,
+                    Token::YieldToken( _ , _ , _ ) => self.parse_yield_expr()?,
                     _ => self.parse_test_list_star_expr_stmt()?
                 };
 
@@ -206,7 +205,7 @@ impl StatementRules for PythonCoreParser {
                             self.lexer.advance();
 
                             let right = match &*self.lexer.symbol {
-                                Token::YieldToken( _ , _ , _ ) => self.parse_yield_stmt()?,
+                                Token::YieldToken( _ , _ , _ ) => self.parse_yield_expr()?,
                                 _ => self.parse_test_list_star_expr_stmt()?
                             };
 
@@ -309,7 +308,7 @@ impl StatementRules for PythonCoreParser {
             Token::ContinueToken( _ , _ , _ ) => self.parse_continue_stmt()?,
             Token::ReturnToken( _ , _ , _ ) => self.parse_return_stmt()?,
             Token::RaiseToken( _ , _ , _ ) => self.parse_raise_stmt()?,
-            _ => self.parse_yield_stmt()?
+            _ => self.parse_yield_expr()?
         };
 
         Ok(right)
@@ -373,12 +372,11 @@ impl StatementRules for PythonCoreParser {
         }
     }
 
-    fn parse_yield_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
-    }
-
     fn parse_import_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        match &*self.lexer.symbol {
+            Token::ImportToken( _ , _ , _ ) => self.parse_import_stmt(),
+            _ => self.parse_import_from_stmt()
+        }
     }
 
     fn parse_import_name_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
