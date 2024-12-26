@@ -390,7 +390,70 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_import_from_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol = self.lexer.symbol.clone(); /* 'from' */
+        self.lexer.advance();
+
+        let mut dots = Vec::<Box<Token>>::new();
+
+        loop {
+            match &*self.lexer.symbol {
+                Token::PeriodToken( _ , _ , _ ) |
+                Token::EllipsisToken( _ , _ , _ )=> {
+                    dots.push(self.lexer.symbol.clone());
+                    self.lexer.advance();
+                },
+                _ => break
+            }
+        }
+
+        dots.reverse();
+
+        let left = match (&*self.lexer.symbol, dots.len()) {
+            ( Token::ImportToken( _ , _ , _ ), 0 ) => {
+                return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting NAME literal or dot(s) before 'import' in import statement!"))))
+            },
+            ( Token::ImportToken( _ , _ , _ ), _  ) => None,
+            ( _ , _ ) => Some(self.parse_dotted_name_stmt()?)
+        };
+
+        match &*self.lexer.symbol {
+            Token::ImportToken( _ , _ , _ ) => {
+                let symbol2 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                match &*self.lexer.symbol {
+                    Token::MultiplyToken( _ , _ , _ ) => { /* '*' */
+                        let symbol3 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+
+                        Ok(Box::new(SyntaxNode::ImportFromStmtNode(pos, self.lexer.position, symbol, dots, left, symbol2, Some(symbol3), None, None)))
+                    },
+                    Token::LeftParenToken( _ , _ , _ ) => {
+                        let symbol3 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+
+                        let right = self.parse_import_as_names_stmt()?;
+
+                        match &*self.lexer.symbol {
+                            Token::RightParenToken( _ , _ , _ ) => {
+                                let symbol4 = self.lexer.symbol.clone();
+                                self.lexer.advance();
+
+                                Ok(Box::new(SyntaxNode::ImportFromStmtNode(pos, self.lexer.position, symbol, dots, left, symbol2, Some(symbol3), Some(right), Some(symbol4))))
+                            },
+                            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ')' in from import statement!"))))
+                        }
+                    },
+                    _ => {
+                        let right = self.parse_import_as_names_stmt()?;
+
+                        Ok(Box::new(SyntaxNode::ImportFromStmtNode(pos, self.lexer.position, symbol, dots, left, symbol2, None, Some(right), None)))
+                    }
+                }
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting 'import' in from import statement!"))))
+        }
     }
 
     fn parse_import_as_name_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
