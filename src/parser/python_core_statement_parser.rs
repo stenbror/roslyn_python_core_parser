@@ -346,7 +346,31 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_raise_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        match &*self.lexer.symbol {
+            Token::NewlineToken( _ , _ , _ , _ , _ ) |
+            Token::SemicolonToken( _ , _ , _ ) => {
+                Ok(Box::new(SyntaxNode::RaiseStmtNode(pos, self.lexer.position, symbol, None, None, None)))
+            },
+            _ => {
+                let left = self.parse_test_expr()?;
+
+                match &*self.lexer.symbol {
+                    Token::FromToken( _ , _ , _ ) => {
+                        let symbol2 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+
+                        let right = self.parse_test_expr()?;
+
+                        Ok(Box::new(SyntaxNode::RaiseStmtNode(pos, self.lexer.position, symbol, Some(left), Some(symbol2), Some(right))))
+                    },
+                    _  => Ok(Box::new(SyntaxNode::RaiseStmtNode(pos, self.lexer.position, symbol, Some(left), None, None)))
+                }
+            }
+        }
     }
 
     fn parse_yield_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
