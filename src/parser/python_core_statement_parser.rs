@@ -1,4 +1,5 @@
 use crate::parser::python_core_match_parser::MatchPatternRules;
+use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
 use crate::parser::token_nodes::Token;
@@ -68,7 +69,39 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_simple_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+        let mut separators = Vec::<Box<Token>>::new();
+
+        nodes.push(self.parse_small_stmt()?);
+
+        loop {
+            match &*self.lexer.symbol {
+                Token::SemicolonToken( _ , _ , _ ) => {
+                    separators.push(self.lexer.symbol.clone());
+                    self.lexer.advance();
+
+                    match &*self.lexer.symbol {
+                        Token::NewlineToken( _ , _ , _ , _ , _ ) => break,
+                        _ => nodes.push(self.parse_small_stmt()?)
+                    }
+                },
+                _ => break
+            }
+        }
+
+        match &*self.lexer.symbol {
+            Token::NewlineToken( _ , _ , _ , _ , _ ) => {
+                let symbol = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                nodes.reverse();
+                separators.reverse();
+
+                Ok(Box::new(SyntaxNode::SimpleStmtNode(pos, self.lexer.position, nodes, separators, symbol)))
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting NEWLINE in statement list!"))))
+        }
     }
 
     fn parse_small_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
