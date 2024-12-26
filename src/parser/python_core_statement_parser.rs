@@ -632,7 +632,41 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_nonlocal_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+        let mut separators = Vec::<Box<Token>>::new();
+
+        let symbol = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        match &*self.lexer.symbol {
+            Token::NameToken( _ , _ , _ , _ ) => {
+                nodes.push(self.parse_atom_expr()?);
+
+                loop {
+                    match &*self.lexer.symbol {
+                        Token::CommaToken( _ , _ , _ ) => {
+                            separators.push(self.lexer.symbol.clone());
+                            self.lexer.advance();
+
+                            match &*self.lexer.symbol {
+                                Token::NameToken( _ , _ , _ , _ ) => {
+                                    nodes.push(self.parse_atom_expr()?);
+                                },
+                                _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting NAME literal in 'nonlocal' statement!"))))
+                            }
+                        },
+                        _ => break
+                    }
+                }
+
+                nodes.reverse();
+                separators.reverse();
+
+                Ok(Box::new(SyntaxNode::NonlocalStmtNode(pos, self.lexer.position, symbol, nodes, separators)))
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting at least one NAME literal in 'nonlocal' statement!"))))
+        }
     }
 
     fn parse_assert_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
