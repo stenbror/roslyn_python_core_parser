@@ -1,3 +1,4 @@
+use crate::parser::python_core_match_parser::MatchPatternRules;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
 use crate::parser::token_nodes::Token;
@@ -56,6 +57,12 @@ impl StatementRules for PythonCoreParser {
             Token::MatricesToken( _ , _ , _ ) |
             Token::DefToken( _ , _ , _ ) |
             Token::ClassToken( _ , _ , _ ) => self.parse_compound_stmt(),
+            Token::NameToken( _ , _ , kw , _ ) => {
+                match &*kw.as_str() {
+                    "match" => self.parse_match_stmt(),
+                    _ => self.parse_simple_stmt()
+                }
+            },
             _ => self.parse_simple_stmt()
         }
     }
