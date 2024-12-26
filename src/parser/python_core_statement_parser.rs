@@ -332,7 +332,17 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_return_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        let right = match &*self.lexer.symbol {
+            Token::NewlineToken( _ , _ , _ , _ , _ ) |
+            Token::SemicolonToken( _ , _ , _ ) => None,
+            _ => Some(self.parse_test_list_star_expr_stmt()?)
+        };
+
+        Ok(Box::new(SyntaxNode::ReturnStmtNode(pos, self.lexer.position, symbol, right)))
     }
 
     fn parse_raise_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
