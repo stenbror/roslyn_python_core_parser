@@ -86,7 +86,7 @@ pub enum SyntaxNode {
     DottedAsNamesStmtNode(u32, u32, Vec<Box<SyntaxNode>>, Vec<Box<Token>>),
     ImportAsNamesStmtNode(u32, u32, Vec<Box<SyntaxNode>>, Vec<Box<Token>>),
     DottedAsNameStmtNode(u32, u32, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>),
-    ImportAsNameStmtNode(u32, u32, Box<SyntaxNode>, Option<Box<Token>>, Option<Box<SyntaxNode>>),
+    ImportAsNameStmtNode(u32, u32, Box<Token>, Option<Box<Token>>, Option<Box<Token>>),
     ImportNameStmtNode(u32, u32, Box<Token>, Box<SyntaxNode>),
     ImportFromStmtNode(u32, u32, Box<Token>, Vec<Box<Token>>, Option<Box<SyntaxNode>>, Box<Token>, Option<Box<Token>>, Option<Box<SyntaxNode>>, Option<Box<Token>>),
     TestListStarExprStmtNode(u32, u32, Vec<Box<SyntaxNode>>, Vec<Box<Token>>),
