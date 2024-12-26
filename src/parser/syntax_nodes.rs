@@ -48,7 +48,7 @@ pub enum SyntaxNode {
     TrueExprNode(u32, u32, Box<Token>),
     TupleExprNode(u32, u32, Box<Token>, Option<Box<SyntaxNode>>, Box<Token>),
     ListExprNode(u32, u32, Box<Token>, Option<Box<SyntaxNode>>, Box<Token>),
-    DictExprNode(u32, u32, Box<Token>, Vec<Box<SyntaxNode>>, Box<Token>),
+    DictionaryExprNode(u32, u32, Box<Token>, Vec<Box<SyntaxNode>>, Box<Token>),
     SetExprNode(u32, u32, Box<Token>, Vec<Box<SyntaxNode>>, Box<Token>),
     DictionaryEntryNode(u32, u32, Box<Token>, Box<Token>, Box<SyntaxNode>),
     DictionaryReferenceNode(u32, u32, Box<Token>, Box<SyntaxNode>),

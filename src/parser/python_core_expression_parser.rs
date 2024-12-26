@@ -2,7 +2,7 @@ use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
-use crate::parser::syntax_nodes::SyntaxNode::ArgumentExprNode;
+use crate::parser::syntax_nodes::SyntaxNode::{ArgumentExprNode, DictionaryExprNode, SetExprNode};
 use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
@@ -33,7 +33,7 @@ trait ExpressionRules {
     fn parse_subscript_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_expr_list_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_test_list_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
-    fn parse_dictionary_set_maker_expr(&mut self, symbol1: Box<Token>) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_dictionary_set_maker_expr(&mut self, symbol1: Box<Token>, position: u32) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_arg_list_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_argument_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_comp_iter_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
@@ -580,7 +580,7 @@ impl ExpressionRules for PythonCoreParser {
                     _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ')' in literal!"))))
                 }
             },
-            Token::LeftCurlyBracketToken( _ , _ , _ ) => self.parse_dictionary_set_maker_expr(symbol1),
+            Token::LeftCurlyBracketToken( _ , _ , _ ) => self.parse_dictionary_set_maker_expr(symbol1, pos),
             _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting valid literal!"))))
         }
     }
@@ -780,8 +780,32 @@ impl ExpressionRules for PythonCoreParser {
         })
     }
 
-    fn parse_dictionary_set_maker_expr(&mut self, symbol1: Box<Token>) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+    fn parse_dictionary_set_maker_expr(&mut self, symbol1: Box<Token>, position: u32) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        let mut is_dictionary = true;
+
+        match &*self.lexer.symbol {
+            Token::RightCurlyBracketToken( _ , _ , _ ) => {
+                let symbol2 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                Ok(Box::new(DictionaryExprNode(position, self.lexer.position, symbol1, Vec::new(), symbol2)))
+            },
+            _ => {
+                let mut nodes = Vec::<Box<SyntaxNode>>::new();
+
+
+
+                let symbol2 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                nodes.reverse();
+
+                match is_dictionary {
+                    true => Ok(Box::new(DictionaryExprNode(position, self.lexer.position, symbol1, nodes, symbol2))),
+                    _ => Ok(Box::new(SetExprNode(position, self.lexer.position, symbol1, nodes, symbol2)))
+                }
+            }
+        }
     }
 
     fn parse_arg_list_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
