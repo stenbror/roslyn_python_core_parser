@@ -410,7 +410,38 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_dotted_name_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+       let pos = self.lexer.position;
+        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+        let mut sepators = Vec::<Box<Token>>::new();
+
+        match &*self.lexer.symbol {
+            Token::NameToken( _ , _ , _ , _ ) => {
+                nodes.push(self.parse_atom_expr()?);
+
+                loop {
+                    match &*self.lexer.symbol {
+                        Token::PeriodToken( _ , _ , _ ) => {
+                            sepators.push(self.lexer.symbol.clone());
+                            self.lexer.advance();
+
+                            match &*self.lexer.symbol {
+                                Token::NameToken( _ , _ , _ , _ ) => {
+                                    nodes.push(self.parse_atom_expr()?);
+                                },
+                                _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting NAME literal in import statement after '.'!"))))
+                            }
+                        },
+                        _ => break
+                    }
+                }
+
+                nodes.reverse();
+                sepators.reverse();
+
+                Ok(Box::new(SyntaxNode::DottedNameStmtNode(pos, self.lexer.position, nodes, sepators)))
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting NAME literal in import statement!"))))
+        }
     }
 
     fn parse_global_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
