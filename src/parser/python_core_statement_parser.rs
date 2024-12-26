@@ -380,7 +380,13 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_import_name_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        let right = self.parse_dotted_as_names_stmt()?;
+
+        Ok(Box::new(SyntaxNode::ImportNameStmtNode(pos, self.lexer.position, symbol, right)))
     }
 
     fn parse_import_from_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
