@@ -234,7 +234,53 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_test_list_star_expr_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let mut nodes: Vec<Box<SyntaxNode>> = Vec::new();
+        let mut separators: Vec<Box<Token>> = Vec::new();
+
+        nodes.push(match &*self.lexer.symbol {
+            Token::MultiplyToken( _ , _ , _ ) => self.parse_star_expr()?,
+            _ => self.parse_test_expr()?
+        });
+
+        loop {
+            match &*self.lexer.symbol {
+                Token::CommaToken( _ , _ , _ ) => {
+                    separators.push(self.lexer.symbol.clone());
+                    self.lexer.advance();
+
+                    match &*self.lexer.symbol {
+                        Token::PlusAssignToken( _ , _ , _ ) |
+                        Token::MinusAssignToken( _ , _ , _ ) |
+                        Token::MultiplyAssignToken( _ , _ , _ ) |
+                        Token::MatricesAssignToken( _ , _ , _ ) |
+                        Token::DivideAssignToken( _ , _ , _ ) |
+                        Token::ModuloAssignToken( _ , _ , _ ) |
+                        Token::AndAssignToken( _ , _ , _ ) |
+                        Token::OrAssignToken( _ , _ , _ ) |
+                        Token::XorAssignToken( _ , _ , _ ) |
+                        Token::ShiftLeftAssignToken( _ , _ , _ ) |
+                        Token::ShiftRightAssignToken( _ , _ , _ ) |
+                        Token::PowerAssignToken( _ , _ , _ ) |
+                        Token::FloorDivideAssignToken( _ , _ , _ ) |
+                        Token::SemicolonToken( _ , _ , _ ) |
+                        Token::NewlineToken( _ , _ , _ , _ , _ ) |
+                        Token::AssignToken( _ , _ , _ ) |
+                        Token::ColonToken( _ , _ , _ ) => break,
+                        _ => nodes.push(match &*self.lexer.symbol {
+                                Token::MultiplyToken( _ , _ , _ ) => self.parse_star_expr()?,
+                                _ => self.parse_test_expr()?
+                            })
+                    }
+                },
+                _ => break
+            }
+        }
+
+        nodes.reverse();
+        separators.reverse();
+
+        Ok(Box::new(SyntaxNode::TestListStarExprStmtNode(pos, self.lexer.position, nodes, separators)))
     }
 
     fn parse_del_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
