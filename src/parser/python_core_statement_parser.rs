@@ -316,11 +316,19 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_break_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        Ok(Box::new(SyntaxNode::BreakStmtNode(pos, self.lexer.position, symbol)))
     }
 
     fn parse_continue_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        Ok(Box::new(SyntaxNode::ContinueStmtNode(pos, self.lexer.position, symbol)))
     }
 
     fn parse_return_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
