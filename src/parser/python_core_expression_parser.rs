@@ -793,6 +793,7 @@ impl ExpressionRules for PythonCoreParser {
             _ => {
                 let mut nodes = Vec::<Box<SyntaxNode>>::new();
                 let mut separators = Vec::<Box<Token>>::new();
+                let pos2 = self.lexer.position;
 
                 /* First element */
                 match *self.lexer.symbol {
@@ -802,14 +803,14 @@ impl ExpressionRules for PythonCoreParser {
                         self.lexer.advance();
                         let right = self.parse_expr()?;
 
-                        nodes.push(Box::new(SetReferenceNode(position, self.lexer.position, symbol, right)));
+                        nodes.push(Box::new(SetReferenceNode(pos2, self.lexer.position, symbol, right)));
                     },
                     Token::PowerToken( _ , _ , _ ) => {
                         let symbol = self.lexer.symbol.clone();
                         self.lexer.advance();
                         let right = self.parse_test_expr()?;
 
-                        nodes.push(Box::new(DictionaryReferenceNode(position, self.lexer.position, symbol, right)));
+                        nodes.push(Box::new(DictionaryReferenceNode(pos2, self.lexer.position, symbol, right)));
                     },
                     _ => {
                         let left = self.parse_test_expr()?;
@@ -820,7 +821,7 @@ impl ExpressionRules for PythonCoreParser {
                                 self.lexer.advance();
                                 let right = self.parse_test_expr()?;
 
-                                nodes.push(Box::new(DictionaryEntryNode(position, self.lexer.position, left, symbol2, right)))
+                                nodes.push(Box::new(DictionaryEntryNode(pos2, self.lexer.position, left, symbol2, right)))
                             },
                             _ => {
                                 is_dictionary = false;
@@ -838,6 +839,7 @@ impl ExpressionRules for PythonCoreParser {
                         match is_dictionary {
                             true => {
                                 loop {
+                                    let mut pos2 = self.lexer.position;
                                     match &*self.lexer.symbol {
                                         Token::CommaToken( _ , _ , _ ) => {
                                             separators.push(self.lexer.symbol.clone());
@@ -850,7 +852,7 @@ impl ExpressionRules for PythonCoreParser {
                                                     self.lexer.advance();
 
                                                     let right = self.parse_test_expr()?;
-                                                    nodes.push(Box::new(DictionaryReferenceNode(position, self.lexer.position, symbol3, right)))
+                                                    nodes.push(Box::new(DictionaryReferenceNode(pos2, self.lexer.position, symbol3, right)))
                                                 },
                                                 _ => {
                                                     let left = self.parse_test_expr()?;
@@ -859,7 +861,7 @@ impl ExpressionRules for PythonCoreParser {
                                                             let symbol3 = self.lexer.symbol.clone();
                                                             self.lexer.advance();
                                                             let right = self.parse_test_expr()?;
-                                                            nodes.push(Box::new(DictionaryEntryNode(position, self.lexer.position, left, symbol3, right)))
+                                                            nodes.push(Box::new(DictionaryEntryNode(pos2, self.lexer.position, left, symbol3, right)))
                                                         },
                                                         _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ':' in dictionary element!"))))
                                                     }
