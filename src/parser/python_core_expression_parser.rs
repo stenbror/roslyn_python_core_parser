@@ -845,8 +845,24 @@ impl ExpressionRules for PythonCoreParser {
 
                                             match &*self.lexer.symbol {
                                                 Token::RightCurlyBracketToken( _ , _ , _ ) => break,
-                                                _ => {
+                                                Token::PowerToken( _ , _ , _ ) => {
+                                                    let symbol3 = self.lexer.symbol.clone();
+                                                    self.lexer.advance();
 
+                                                    let right = self.parse_test_expr()?;
+                                                    nodes.push(Box::new(DictionaryReferenceNode(position, self.lexer.position, symbol3, right)))
+                                                },
+                                                _ => {
+                                                    let left = self.parse_test_expr()?;
+                                                    match &*self.lexer.symbol {
+                                                        Token::SemicolonToken( _ , _ , _ ) => {
+                                                            let symbol3 = self.lexer.symbol.clone();
+                                                            self.lexer.advance();
+                                                            let right = self.parse_test_expr()?;
+                                                            nodes.push(Box::new(DictionaryEntryNode(position, self.lexer.position, left, symbol3, right)))
+                                                        },
+                                                        _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ':' in dictionary element!"))))
+                                                    }
                                                 }
                                             }
                                         },
