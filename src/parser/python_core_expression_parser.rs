@@ -788,10 +788,11 @@ impl ExpressionRules for PythonCoreParser {
                 let symbol2 = self.lexer.symbol.clone();
                 self.lexer.advance();
 
-                Ok(Box::new(DictionaryExprNode(position, self.lexer.position, symbol1, Vec::new(), symbol2)))
+                Ok(Box::new(DictionaryExprNode(position, self.lexer.position, symbol1, Vec::new(),Vec::new(), symbol2)))
             },
             _ => {
                 let mut nodes = Vec::<Box<SyntaxNode>>::new();
+                let mut separators = Vec::<Box<Token>>::new();
 
                 /* First element */
                 match *self.lexer.symbol {
@@ -818,6 +819,7 @@ impl ExpressionRules for PythonCoreParser {
                                 let symbol2 = self.lexer.symbol.clone();
                                 self.lexer.advance();
                                 let right = self.parse_test_expr()?;
+
                                 nodes.push(Box::new(DictionaryEntryNode(position, self.lexer.position, left, symbol2, right)))
                             },
                             _ => {
@@ -828,8 +830,57 @@ impl ExpressionRules for PythonCoreParser {
                     }
                 }
 
+                /* Second and later elements */
+                match &*self.lexer.symbol {
+                    Token::AsyncToken( _ , _ , _ ) |
+                    Token::ForToken( _ , _ , _ ) => nodes.push(self.parse_comp_for_expr()?),
+                    _ => {
+                        match is_dictionary {
+                            true => {
+                                loop {
+                                    match &*self.lexer.symbol {
+                                        Token::CommaToken( _ , _ , _ ) => {
+                                            separators.push(self.lexer.symbol.clone());
+                                            self.lexer.advance();
 
+                                            match &*self.lexer.symbol {
+                                                Token::RightCurlyBracketToken( _ , _ , _ ) => break,
+                                                _ => {
 
+                                                }
+                                            }
+                                        },
+                                        _ => break
+                                    }
+                                }
+                            },
+                            _ => {
+                                loop {
+                                    match &*self.lexer.symbol {
+                                        Token::CommaToken( _ , _ , _ ) => {
+                                            separators.push(self.lexer.symbol.clone());
+                                            self.lexer.advance();
+
+                                            match &*self.lexer.symbol {
+                                                Token::RightCurlyBracketToken( _ , _ , _ ) => break,
+                                                Token::MultiplyToken( _ , _ , _ ) => {
+                                                    let pos = self.lexer.position;
+                                                    let symbol3 = self.lexer.symbol.clone();
+                                                    self.lexer.advance();
+
+                                                    let right = self.parse_expr()?;
+                                                    nodes.push(Box::new(SetReferenceNode(pos, self.lexer.position, symbol3, right)));
+                                                },
+                                                _ => nodes.push(self.parse_test_expr()?)
+                                            }
+                                        },
+                                        _ => break
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
                 /* End it up */
 
@@ -837,10 +888,11 @@ impl ExpressionRules for PythonCoreParser {
                 self.lexer.advance();
 
                 nodes.reverse();
+                separators.reverse();
 
                 match is_dictionary {
-                    true => Ok(Box::new(DictionaryExprNode(position, self.lexer.position, symbol1, nodes, symbol2))),
-                    _ => Ok(Box::new(SetExprNode(position, self.lexer.position, symbol1, nodes, symbol2)))
+                    true => Ok(Box::new(DictionaryExprNode(position, self.lexer.position, symbol1, nodes, separators, symbol2))),
+                    _ => Ok(Box::new(SetExprNode(position, self.lexer.position, symbol1, nodes, separators, symbol2)))
                 }
             }
         }
