@@ -294,7 +294,11 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_pass_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        Ok(Box::new(SyntaxNode::PassStmtNode(pos, self.lexer.position, symbol)))
     }
 
     fn parse_flow_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
