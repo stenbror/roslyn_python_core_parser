@@ -50,7 +50,7 @@ pub enum SyntaxNode {
     ListExprNode(u32, u32, Box<Token>, Option<Box<SyntaxNode>>, Box<Token>),
     DictionaryExprNode(u32, u32, Box<Token>, Vec<Box<SyntaxNode>>, Box<Token>),
     SetExprNode(u32, u32, Box<Token>, Vec<Box<SyntaxNode>>, Box<Token>),
-    DictionaryEntryNode(u32, u32, Box<Token>, Box<Token>, Box<SyntaxNode>),
+    DictionaryEntryNode(u32, u32, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>),
     DictionaryReferenceNode(u32, u32, Box<Token>, Box<SyntaxNode>),
     SetReferenceNode(u32, u32, Box<Token>, Box<SyntaxNode>),
     TestListComprehensionExprNode(u32, u32, Vec<Box<SyntaxNode>>, Vec<Box<Token>>),

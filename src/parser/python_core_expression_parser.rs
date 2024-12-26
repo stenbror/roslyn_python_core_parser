@@ -2,7 +2,7 @@ use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
-use crate::parser::syntax_nodes::SyntaxNode::{ArgumentExprNode, DictionaryExprNode, SetExprNode};
+use crate::parser::syntax_nodes::SyntaxNode::{ArgumentExprNode, DictionaryEntryNode, DictionaryExprNode, DictionaryReferenceNode, SetExprNode, SetReferenceNode};
 use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
@@ -793,7 +793,45 @@ impl ExpressionRules for PythonCoreParser {
             _ => {
                 let mut nodes = Vec::<Box<SyntaxNode>>::new();
 
+                /* First element */
+                match *self.lexer.symbol {
+                    Token::MultiplyToken( _ , _ , _ ) => {
+                        is_dictionary = false;
+                        let symbol = self.lexer.symbol.clone();
+                        self.lexer.advance();
+                        let right = self.parse_expr()?;
 
+                        nodes.push(Box::new(SetReferenceNode(position, self.lexer.position, symbol, right)));
+                    },
+                    Token::PowerToken( _ , _ , _ ) => {
+                        let symbol = self.lexer.symbol.clone();
+                        self.lexer.advance();
+                        let right = self.parse_test_expr()?;
+
+                        nodes.push(Box::new(DictionaryReferenceNode(position, self.lexer.position, symbol, right)));
+                    },
+                    _ => {
+                        let left = self.parse_test_expr()?;
+
+                        match &*self.lexer.symbol {
+                            Token::ColonToken( _ , _ , _ ) => {
+                                let symbol2 = self.lexer.symbol.clone();
+                                self.lexer.advance();
+                                let right = self.parse_test_expr()?;
+                                nodes.push(Box::new(DictionaryEntryNode(position, self.lexer.position, left, symbol2, right)))
+                            },
+                            _ => {
+                                is_dictionary = false;
+                                nodes.push(left)
+                            }
+                        }
+                    }
+                }
+
+
+
+
+                /* End it up */
 
                 let symbol2 = self.lexer.symbol.clone();
                 self.lexer.advance();
