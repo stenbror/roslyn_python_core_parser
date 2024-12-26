@@ -1,5 +1,6 @@
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
+use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
 pub trait StatementRules {
@@ -45,7 +46,18 @@ pub trait StatementRules {
 
 impl StatementRules for PythonCoreParser {
     fn parse_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        match &*self.lexer.symbol {
+            Token::IfToken( _ , _ , _ ) |
+            Token::WhileToken( _ , _ , _ ) |
+            Token::AsyncToken( _ , _ , _ ) |
+            Token::ForToken( _ , _ , _ ) |
+            Token::TryToken( _ , _ , _ ) |
+            Token::WithToken( _ , _ , _ ) |
+            Token::MatricesToken( _ , _ , _ ) |
+            Token::DefToken( _ , _ , _ ) |
+            Token::ClassToken( _ , _ , _ ) => self.parse_compound_stmt(),
+            _ => self.parse_simple_stmt()
+        }
     }
 
     fn parse_simple_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {

@@ -14,6 +14,7 @@ pub enum Token {
     AsyncToken(u32, u32, Vec<Box<Trivia>>),
     AwaitToken(u32, u32, Vec<Box<Trivia>>),
     BreakToken(u32, u32, Vec<Box<Trivia>>),
+    ClassToken(u32, u32, Vec<Box<Trivia>>),
     ContinueToken(u32, u32, Vec<Box<Trivia>>),
     DefToken(u32, u32, Vec<Box<Trivia>>),
     DelToken(u32, u32, Vec<Box<Trivia>>),
@@ -89,9 +90,9 @@ pub enum Token {
     EllipsisToken(u32, u32, Vec<Box<Trivia>>),
 
     /* Literal */
-    NameToken(u32, u32, Box<str>, Vec<Box<Trivia>>),
-    NumberToken(u32, u32, Box<str>, Vec<Box<Trivia>>),
-    StringToken(u32, u32, Vec<Box<str>>, Vec<Box<Trivia>>),
+    NameToken(u32, u32, Box<String>, Vec<Box<Trivia>>),
+    NumberToken(u32, u32, Box<String>, Vec<Box<Trivia>>),
+    StringToken(u32, u32, Vec<Box<String>>, Vec<Box<Trivia>>),
 
     /* Special */
     NewlineToken(u32, u32, char, char, Vec<Box<Trivia>>),
