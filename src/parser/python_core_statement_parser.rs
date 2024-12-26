@@ -284,7 +284,13 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_del_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        let right = self.parse_expr_list_expr()?;
+
+        Ok(Box::new(SyntaxNode::DelStmtNode(pos, self.lexer.position, symbol, right)))
     }
 
     fn parse_pass_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
