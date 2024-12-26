@@ -302,7 +302,17 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_flow_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+
+        let right = match &*self.lexer.symbol {
+            Token::BreakToken( _ , _ , _ ) => self.parse_break_stmt()?,
+            Token::ContinueToken( _ , _ , _ ) => self.parse_continue_stmt()?,
+            Token::ReturnToken( _ , _ , _ ) => self.parse_return_stmt()?,
+            Token::RaiseToken( _ , _ , _ ) => self.parse_raise_stmt()?,
+            _ => self.parse_yield_stmt()?
+        };
+
+        Ok(right)
     }
 
     fn parse_break_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
