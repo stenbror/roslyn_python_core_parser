@@ -2,7 +2,6 @@ use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
-use crate::parser::syntax_nodes::SyntaxNode::{ArgumentExprNode, DictionaryEntryNode, DictionaryExprNode, DictionaryReferenceNode, SetExprNode, SetReferenceNode};
 use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
@@ -788,7 +787,7 @@ impl ExpressionRules for PythonCoreParser {
                 let symbol2 = self.lexer.symbol.clone();
                 self.lexer.advance();
 
-                Ok(Box::new(DictionaryExprNode(position, self.lexer.position, symbol1, Vec::new(),Vec::new(), symbol2)))
+                Ok(Box::new(SyntaxNode::DictionaryExprNode(position, self.lexer.position, symbol1, Vec::new(),Vec::new(), symbol2)))
             },
             _ => {
                 let mut nodes = Vec::<Box<SyntaxNode>>::new();
@@ -803,14 +802,14 @@ impl ExpressionRules for PythonCoreParser {
                         self.lexer.advance();
                         let right = self.parse_expr()?;
 
-                        nodes.push(Box::new(SetReferenceNode(pos2, self.lexer.position, symbol, right)));
+                        nodes.push(Box::new(SyntaxNode::SetReferenceNode(pos2, self.lexer.position, symbol, right)));
                     },
                     Token::PowerToken( _ , _ , _ ) => {
                         let symbol = self.lexer.symbol.clone();
                         self.lexer.advance();
                         let right = self.parse_test_expr()?;
 
-                        nodes.push(Box::new(DictionaryReferenceNode(pos2, self.lexer.position, symbol, right)));
+                        nodes.push(Box::new(SyntaxNode::DictionaryReferenceNode(pos2, self.lexer.position, symbol, right)));
                     },
                     _ => {
                         let left = self.parse_test_expr()?;
@@ -821,7 +820,7 @@ impl ExpressionRules for PythonCoreParser {
                                 self.lexer.advance();
                                 let right = self.parse_test_expr()?;
 
-                                nodes.push(Box::new(DictionaryEntryNode(pos2, self.lexer.position, left, symbol2, right)))
+                                nodes.push(Box::new(SyntaxNode::DictionaryEntryNode(pos2, self.lexer.position, left, symbol2, right)))
                             },
                             _ => {
                                 is_dictionary = false;
@@ -852,7 +851,7 @@ impl ExpressionRules for PythonCoreParser {
                                                     self.lexer.advance();
 
                                                     let right = self.parse_test_expr()?;
-                                                    nodes.push(Box::new(DictionaryReferenceNode(pos2, self.lexer.position, symbol3, right)))
+                                                    nodes.push(Box::new(SyntaxNode::DictionaryReferenceNode(pos2, self.lexer.position, symbol3, right)))
                                                 },
                                                 _ => {
                                                     let left = self.parse_test_expr()?;
@@ -861,7 +860,7 @@ impl ExpressionRules for PythonCoreParser {
                                                             let symbol3 = self.lexer.symbol.clone();
                                                             self.lexer.advance();
                                                             let right = self.parse_test_expr()?;
-                                                            nodes.push(Box::new(DictionaryEntryNode(pos2, self.lexer.position, left, symbol3, right)))
+                                                            nodes.push(Box::new(SyntaxNode::DictionaryEntryNode(pos2, self.lexer.position, left, symbol3, right)))
                                                         },
                                                         _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ':' in dictionary element!"))))
                                                     }
@@ -887,7 +886,7 @@ impl ExpressionRules for PythonCoreParser {
                                                     self.lexer.advance();
 
                                                     let right = self.parse_expr()?;
-                                                    nodes.push(Box::new(SetReferenceNode(pos, self.lexer.position, symbol3, right)));
+                                                    nodes.push(Box::new(SyntaxNode::SetReferenceNode(pos, self.lexer.position, symbol3, right)));
                                                 },
                                                 _ => nodes.push(self.parse_test_expr()?)
                                             }
@@ -909,8 +908,8 @@ impl ExpressionRules for PythonCoreParser {
                 separators.reverse();
 
                 match is_dictionary {
-                    true => Ok(Box::new(DictionaryExprNode(position, self.lexer.position, symbol1, nodes, separators, symbol2))),
-                    _ => Ok(Box::new(SetExprNode(position, self.lexer.position, symbol1, nodes, separators, symbol2)))
+                    true => Ok(Box::new(SyntaxNode::DictionaryExprNode(position, self.lexer.position, symbol1, nodes, separators, symbol2))),
+                    _ => Ok(Box::new(SyntaxNode::SetExprNode(position, self.lexer.position, symbol1, nodes, separators, symbol2)))
                 }
             }
         }
@@ -959,7 +958,7 @@ impl ExpressionRules for PythonCoreParser {
                 match &*self.lexer.symbol {
                     Token::NameToken( _ , _ , _ , _ ) => {
                         let right = self.parse_atom_expr()?;
-                        Ok(Box::new(ArgumentExprNode(pos, self.lexer.position, None, Some(symbol), Some(right))))
+                        Ok(Box::new(SyntaxNode::ArgumentExprNode(pos, self.lexer.position, None, Some(symbol), Some(right))))
                     },
                     _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting NAME literal in argument after '*' or '**'!"))))
                 }
@@ -973,12 +972,12 @@ impl ExpressionRules for PythonCoreParser {
                         let symbol = self.lexer.symbol.clone();
                         self.lexer.advance();
                         let right = self.parse_atom_expr()?;
-                        Ok(Box::new(ArgumentExprNode(pos, self.lexer.position, Some(left), Some(symbol), Some(right))))
+                        Ok(Box::new(SyntaxNode::ArgumentExprNode(pos, self.lexer.position, Some(left), Some(symbol), Some(right))))
                     },
                     Token::AsyncToken( _ , _ , _ ) |
                     Token::ForToken( _ , _ , _ )=> {
                         let  right = self.parse_comp_for_expr()?;
-                        Ok(Box::new(ArgumentExprNode(pos, self.lexer.position, Some(left), None, Some(right))))
+                        Ok(Box::new(SyntaxNode::ArgumentExprNode(pos, self.lexer.position, Some(left), None, Some(right))))
                     },
                     _ => Ok(left)
                 }
