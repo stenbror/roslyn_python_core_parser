@@ -781,7 +781,21 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_else_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        match &*self.lexer.symbol {
+            Token::ColonToken( _ , _ , _ ) => {
+                let symbol2 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let right = self.parse_suite_stmt()?;
+
+                Ok(Box::new(SyntaxNode::ElseStmtNode(pos, self.lexer.position, symbol, symbol2, right)))
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ':' in 'else' statement!"))))
+        }
     }
 
     fn parse_while_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
