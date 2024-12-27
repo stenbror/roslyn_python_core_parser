@@ -761,7 +761,23 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_elif_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        let left = self.parse_named_expr()?;
+
+        match &*self.lexer.symbol {
+            Token::ColonToken( _ , _ , _ ) => {
+                let symbol2 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let right = self.parse_suite_stmt()?;
+
+                Ok(Box::new(SyntaxNode::ElifStmtNode(pos, self.lexer.position, symbol, left, symbol2, right)))
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ':' in 'elif' statement!"))))
+        }
     }
 
     fn parse_else_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
