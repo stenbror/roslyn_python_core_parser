@@ -888,7 +888,40 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_suite_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        match &*self.lexer.symbol {
+            Token::NewlineToken( _ , _ , _ , _ , _ ) => {
+                let symbol1 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                match &*self.lexer.symbol {
+                    Token::IndentToken( _ , _ , _ ) => {
+                        let symbol2 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+
+                        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+
+                        nodes.push(self.parse_stmt()?);
+
+                        loop {
+                            match &*self.lexer.symbol {
+                                Token::DedentToken( _ , _ , _ ) => break,
+                                _ => nodes.push(self.parse_stmt()?)
+                            }
+                        }
+
+                        nodes.reverse();
+
+                        let symbol3 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+
+                        Ok(Box::new(SyntaxNode::SuiteStmtNode(pos, self.lexer.position, symbol1, symbol2, nodes, symbol3)))
+                    },
+                    _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting 'indent' statement!"))))
+                }
+            },
+            _ => self.parse_simple_stmt()
+        }
     }
 }
 
