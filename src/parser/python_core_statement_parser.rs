@@ -3,9 +3,10 @@ use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::python_core_expression_parser::ExpressionRules;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
-use crate::parser::syntax_nodes::SyntaxNode::IfStmtNode;
 use crate::parser::token_nodes::Token;
-use super::python_core_parser::{BlockGrammarRules, PythonCoreParser};
+use crate::parser::python_core_block_parser::BlockGrammarRules;
+use super::python_core_parser::PythonCoreParser;
+
 
 pub trait StatementRules {
     fn parse_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
@@ -754,7 +755,7 @@ impl StatementRules for PythonCoreParser {
 
                 nodes.reverse();
 
-                Ok(Box::new(IfStmtNode(pos, self.lexer.position, symbol, left, symbol2, right, nodes, else_part)))
+                Ok(Box::new(SyntaxNode::IfStmtNode(pos, self.lexer.position, symbol, left, symbol2, right, nodes, else_part)))
             },
             _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ':' in 'if' statement!"))))
         }

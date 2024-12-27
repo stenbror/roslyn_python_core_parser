@@ -3,7 +3,8 @@ use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
 use crate::parser::token_nodes::Token;
-use super::python_core_parser::{BlockGrammarRules, PythonCoreParser};
+use super::python_core_parser::PythonCoreParser;
+use crate::parser::python_core_block_parser::BlockGrammarRules;
 
 
 // Trait for expression grammar rule ///////////////////////////////////////////////////////////////
