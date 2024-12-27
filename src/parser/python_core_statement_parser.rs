@@ -4,7 +4,7 @@ use crate::parser::python_core_expression_parser::ExpressionRules;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
 use crate::parser::token_nodes::Token;
-use super::python_core_parser::PythonCoreParser;
+use super::python_core_parser::{BlockGrammarRules, PythonCoreParser};
 
 pub trait StatementRules {
     fn parse_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
@@ -690,7 +690,18 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_compound_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        match &*self.lexer.symbol {
+            Token::IfToken( _ , _ , _ ) => self.parse_if_stmt(),
+            Token::ForToken( _ , _ , _ ) => self.parse_for_stmt(),
+            Token::WhileToken( _ , _ , _ ) => self.parse_while_stmt(),
+            Token::TryToken( _ , _ , _ ) => self.parse_try_stmt(),
+            Token::WithToken( _ , _ , _ ) => self.parse_with_stmt(),
+            Token::DefToken( _ , _ , _ ) => self.parse_func_def_stmt(),
+            Token::ClassToken( _ , _ , _ ) => self.parse_class_stmt(),
+            Token::AsyncToken( _ , _ , _ ) => self.parse_async_stmt(),
+            Token::MatricesToken( _ , _ , _ ) => self.parse_decorated_stmt(),
+            _ => self.parse_match_stmt()
+        }
     }
 
     fn parse_async_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
