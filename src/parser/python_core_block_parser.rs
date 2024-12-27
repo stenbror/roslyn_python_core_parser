@@ -1,5 +1,6 @@
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
+use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
 pub trait BlockGrammarRules {
@@ -75,7 +76,25 @@ impl BlockGrammarRules for PythonCoreParser {
     }
 
     fn parse_func_type_input(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let right = self.parse_func_type()?;
+
+        let mut nodes = Vec::<Box<Token>>::new();
+
+        loop {
+            match &*self.lexer.symbol {
+                Token::NewlineToken( _ , _ , _ , _ , _ ) => {
+                    nodes.push(self.lexer.symbol.clone())
+                },_ => break
+            }
+        }
+
+        nodes.reverse();
+
+        match &*self.lexer.symbol {
+            Token::EofToken( _ , _ , _ ) => Ok(Box::new(SyntaxNode::FuncTypeInputStmtNode(pos, self.lexer.position, right, nodes, self.lexer.symbol.clone()))),
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting EOF in type input!"))))
+        }
     }
 
     fn parse_func_type(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
