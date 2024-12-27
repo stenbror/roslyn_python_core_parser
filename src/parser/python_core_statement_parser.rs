@@ -876,7 +876,51 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_with_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+        let mut separators = Vec::<Box<Token>>::new();
+
+        nodes.push(self.parse_with_item_stmt()?);
+
+        loop {
+            match &*self.lexer.symbol {
+                Token::CommaToken( _ , _ , _ ) => {
+                    separators.push(self.lexer.symbol.clone());
+                    self.lexer.advance();
+
+                    nodes.push(self.parse_with_item_stmt()?)
+                },
+                _ => break
+            }
+        }
+
+        nodes.reverse();
+        separators.reverse();
+
+        match &*self.lexer.symbol {
+            Token::ColonToken( _ , _ , _ ) => {
+                let symbol2 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let tc = match &*self.lexer.symbol {
+                    Token::TypeCommentToken( _ , _ , _ , _ ) => {
+                        let symbol3 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+
+                        Some(symbol3)
+                    },
+                    _ => None
+                };
+
+                let next = self.parse_suite_stmt()?;
+
+                Ok(Box::new(SyntaxNode::WithStmtNode(pos, self.lexer.position, symbol, nodes, separators, symbol2, tc, next)))
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ':' in 'with' statement!"))))
+        }
     }
 
     fn parse_with_item_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
