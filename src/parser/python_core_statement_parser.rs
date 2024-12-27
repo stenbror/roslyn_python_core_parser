@@ -880,7 +880,20 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_with_item_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let left = self.parse_test_expr()?;
+
+        match &*self.lexer.symbol {
+            Token::AsToken( _ , _ , _ ) => {
+                let symbol = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let right = self.parse_expr()?;
+
+                Ok(Box::new(SyntaxNode::WithItemStmtNode(pos, self.lexer.position, left, Some(symbol), Some(right))))
+            },
+            _ => Ok(Box::new(SyntaxNode::WithItemStmtNode(pos, self.lexer.position, left, None, None)))
+        }
     }
 
     fn parse_except_clause_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
