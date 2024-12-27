@@ -3,6 +3,7 @@ use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::python_core_expression_parser::ExpressionRules;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
+use crate::parser::syntax_nodes::SyntaxNode::IfStmtNode;
 use crate::parser::token_nodes::Token;
 use super::python_core_parser::{BlockGrammarRules, PythonCoreParser};
 
@@ -720,7 +721,43 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_if_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        let left = self.parse_named_expr()?;
+
+        match &*self.lexer.symbol {
+            Token::ColonToken( _ , _ , _ ) => {
+                let symbol2 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let right = self.parse_suite_stmt()?;
+
+                let mut nodes = Vec::<Box<SyntaxNode>>::new();
+
+                loop {
+                    match &*self.lexer.symbol {
+                        Token::ElseToken( _ , _ , _ ) => {
+                            nodes.push(self.parse_elif_stmt()?);
+                        },
+                        _ => break
+                    }
+                }
+
+                let else_part = match &*self.lexer.symbol {
+                    Token::ElseToken( _, _ , _ ) => {
+                        Some(self.parse_else_stmt()?)
+                    },
+                    _ => None
+                };
+
+                nodes.reverse();
+
+                Ok(Box::new(IfStmtNode(pos, self.lexer.position, symbol, left, symbol2, right, nodes, else_part)))
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ':' in 'if' statement!"))))
+        }
     }
 
     fn parse_elif_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
