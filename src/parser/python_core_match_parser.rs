@@ -11,3 +11,12 @@ impl MatchPatternRules for PythonCoreParser {
         todo!()
     }
 }
+
+// Unittests for expression grammar rules //////////////////////////////////////////////////////////
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn dummy_test() {
+        assert_eq!(1 == 1, true);
+    }
+}
