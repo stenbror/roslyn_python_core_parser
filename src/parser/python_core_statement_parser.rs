@@ -868,7 +868,80 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_try_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        match &*self.lexer.symbol {
+            Token::ColonToken( _ , _ , _ ) => {
+                let symbol2 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let left = self.parse_suite_stmt()?;
+
+                match &*self.lexer.symbol {
+                    Token::FinallyToken( _ , _ , _ ) => {
+                        let symbol3 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+
+                        match &*self.lexer.symbol {
+                            Token::ColonToken( _ , _ , _ ) => {
+                                let symbol4 = self.lexer.symbol.clone();
+                                self.lexer.advance();
+                                let next = self.parse_suite_stmt()?;
+
+                                Ok(Box::new(SyntaxNode::TryStmtNode(pos, self.lexer.position, symbol, symbol2, left, Vec::new(), None, Some(symbol3), Some(symbol4), Some(next))))
+                            },
+                            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ':' in 'finally' statement!"))))
+                        }
+                    },
+                    _ => {
+                        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+
+                        match &*self.lexer.symbol {
+                            Token::ExceptToken( _ , _ , _ ) => {
+                                nodes.push(self.parse_except_stmt()?);
+
+                                loop {
+                                    match &*self.lexer.symbol {
+                                        Token::ExceptToken( _ , _ , _ ) => nodes.push(self.parse_except_stmt()?),
+                                        _ => break
+                                    }
+                                }
+
+                                nodes.reverse();
+
+                                let else_part = match &*self.lexer.symbol {
+                                    Token::ElseToken( _ , _ , _ ) => Some(self.parse_else_stmt()?),
+                                    _ => None
+                                };
+
+                                match &*self.lexer.symbol {
+                                    Token::FinallyToken( _ , _ , _ ) => {
+                                        let symbol3 = self.lexer.symbol.clone();
+                                        self.lexer.advance();
+
+                                        match &*self.lexer.symbol {
+                                            Token::ColonToken( _ , _ , _ ) => {
+                                                let symbol4 = self.lexer.symbol.clone();
+                                                self.lexer.advance();
+                                                let next = self.parse_suite_stmt()?;
+
+                                                Ok(Box::new(SyntaxNode::TryStmtNode(pos, self.lexer.position, symbol, symbol2, left, Vec::new(), else_part, Some(symbol3), Some(symbol4), Some(next))))
+                                            },
+                                            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ':' in 'finally' statement!"))))
+                                        }
+                                    },
+                                    _ => Ok(Box::new(SyntaxNode::TryStmtNode(pos, self.lexer.position, symbol, symbol2, left, nodes, else_part, None, None, None)))
+                                }
+                            },
+                            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting 'except' in 'try' statement!"))))
+                        }
+                    }
+                }
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ':' in 'try' statement!"))))
+        }
     }
 
     fn parse_except_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
