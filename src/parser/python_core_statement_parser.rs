@@ -872,7 +872,20 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_except_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let left = self.parse_except_clause_stmt()?;
+
+        match &*self.lexer.symbol {
+            Token::ColonToken( _ , _ , _ ) => {
+                let symbol = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let right = self.parse_suite_stmt()?;
+
+                Ok(Box::new(SyntaxNode::ExceptStmtNode(pos, self.lexer.position, left, symbol, right)))
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ':' in 'with' statement!"))))
+        }
     }
 
     fn parse_with_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
