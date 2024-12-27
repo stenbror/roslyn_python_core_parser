@@ -799,7 +799,28 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_while_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        let left = self.parse_named_expr()?;
+
+        match &*self.lexer.symbol {
+            Token::ColonToken( _ , _ , _ ) => {
+                let symbol2 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let right = self.parse_suite_stmt()?;
+
+                let else_part = match &*self.lexer.symbol {
+                    Token::ElseToken( _, _ , _ ) => Some(self.parse_else_stmt()?),
+                    _ => None
+                };
+
+                Ok(Box::new(SyntaxNode::WhileStmtNode(pos, self.lexer.position, symbol, left, symbol2, right, else_part)))
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ':' in 'while' statement!"))))
+        }
     }
 
     fn parse_for_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
