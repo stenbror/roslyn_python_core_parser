@@ -705,7 +705,18 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_async_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        let right = match &*self.lexer.symbol {
+            Token::DefToken( _ , _ , _ ) => self.parse_func_def_stmt()?,
+            Token::ClassToken( _ , _ , _ ) => self.parse_class_stmt()?,
+            Token::WithToken( _ , _ , _ ) => self.parse_with_stmt()?,
+            _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting 'def', 'class' or 'with' after 'async' statement!"))))
+        };
+
+        Ok(Box::new(SyntaxNode::AsyncStmtNode(pos, self.lexer.position, symbol, right)))
     }
 
     fn parse_if_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
