@@ -824,7 +824,47 @@ impl StatementRules for PythonCoreParser {
     }
 
     fn parse_for_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        let left = self.parse_expr_list_expr()?;
+
+        match &*self.lexer.symbol {
+            Token::InToken( _ , _ , _ ) => {
+                let symbol2 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let right = self.parse_test_list_expr()?;
+
+                match &*self.lexer.symbol {
+                    Token::ColonToken( _ , _ , _ ) => {
+                        let symbol3 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+
+                        let tc = match &*self.lexer.symbol {
+                            Token::TypeCommentToken( _ , _ , _ , _ ) => {
+                                let symbol5 = self.lexer.symbol.clone();
+                                self.lexer.advance();
+                                Some(symbol5)
+                            },
+                            _ => None
+                        };
+
+                        let next = self.parse_suite_stmt()?;
+
+                        let else_part = match &*self.lexer.symbol {
+                            Token::ElseToken( _, _ , _ ) => Some(self.parse_else_stmt()?),
+                            _ => None
+                        };
+
+                        Ok(Box::new(SyntaxNode::ForStmtNode(pos, self.lexer.position, symbol, left, symbol2, right, symbol3, tc, next, else_part)))
+                    },
+                    _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ':' in 'for' statement!"))))
+                }
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting 'in' in 'for' statement!"))))
+        }
     }
 
     fn parse_try_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {

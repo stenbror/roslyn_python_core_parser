@@ -111,7 +111,7 @@ pub enum SyntaxNode {
     ElifStmtNode(u32, u32, Box<Token>, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>),
     ElseStmtNode(u32, u32, Box<Token>, Box<Token>, Box<SyntaxNode>),
     WhileStmtNode(u32, u32, Box<Token>, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>, Option<Box<SyntaxNode>>),
-    ForStmtNode(u32, u32, Box<Token>, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>, Box<SyntaxNode>),
+    ForStmtNode(u32, u32, Box<Token>, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>, Box<Token>, Option<Box<Token>>, Box<SyntaxNode>, Option<Box<SyntaxNode>>),
     WithStmtNode(u32, u32, Box<Token>, Vec<Box<SyntaxNode>>, Vec<Box<Token>>, Box<Token>, Option<Box<Token>>, Box<SyntaxNode>),
     WithItemStmtNode(u32, u32, Box<SyntaxNode>, Option<Box<Token>>, Option<Box<SyntaxNode>>),
     SuiteStmtNode(u32, u32, Box<Token>, Box<Token>, Vec<Box<SyntaxNode>>, Box<Token>),
