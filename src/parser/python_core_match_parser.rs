@@ -254,7 +254,21 @@ impl MatchPatternRules for PythonCoreParser {
     }
 
     fn parse_wildcard_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+
+        match &*self.lexer.symbol {
+            Token::NameToken( s , e , text, t ) => {
+                match text.as_str() {
+                    "_" => {
+                        let symbol = Box::new(Token::DefaultToken(*s, *e, t.clone()));
+                        self.lexer.advance();
+                        Ok(Box::new(SyntaxNode::DefaultPatterNode(pos, self.lexer.position, symbol)))
+                    },
+                    _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting '_' in 'wildcard' pattern!"))))
+                }
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting '_' in 'wildcard' pattern!"))))
+        }
     }
 
     fn parse_value_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
