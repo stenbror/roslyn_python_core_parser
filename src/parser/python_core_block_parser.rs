@@ -264,7 +264,26 @@ impl BlockGrammarRules for PythonCoreParser {
     }
 
     fn parse_tfp_def(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+
+        match &*self.lexer.symbol {
+            Token::NameToken( _ , _ , _ , _ ) => {
+                let left = self.parse_test_expr()?;
+
+                match &*self.lexer.symbol {
+                    Token::ColonToken( _ , _ , _ ) => {
+                        let symbol1 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+
+                        let right = self.parse_test_expr()?;
+
+                        Ok(Box::new(SyntaxNode::TypedFormalParameterNode(pos, self.lexer.position, left, symbol1, right)))
+                    },
+                    _ => Ok(left)
+                }
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting Name literal in argument!"))))
+        }
     }
 
     fn parse_var_args_list_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
