@@ -1,3 +1,4 @@
+
 use crate::parser::python_core_expression_parser::ExpressionRules;
 use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
@@ -173,7 +174,58 @@ impl BlockGrammarRules for PythonCoreParser {
     }
 
     fn parse_class_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol1 = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        match &*self.lexer.symbol {
+            Token::NameToken( _ , _ , _ , _ ) => {
+                let symbol2 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                match &*self.lexer.symbol {
+                    Token::LeftParenToken( _ , _ , _ ) => {
+                        let symbol3 = Some(self.lexer.symbol.clone());
+                        self.lexer.advance();
+
+                        let right = match &*self.lexer.symbol {
+                            Token::RightParenToken( _ , _ , _ ) => None,
+                            _ => Some(self.parse_arg_list_expr()?)
+                        };
+                        match &*self.lexer.symbol {
+                            Token::RightParenToken( _ , _ , _ ) => {
+                                let symbol4 = Some(self.lexer.symbol.clone());
+                                self.lexer.advance();
+
+                                match &*self.lexer.symbol {
+                                    Token::ColonToken( _ , _ , _ ) => {
+                                        let symbol5 = self.lexer.symbol.clone();
+                                        self.lexer.advance();
+
+                                        let next = self.parse_suite_stmt()?;
+
+                                        Ok(Box::new(SyntaxNode::ClassDefStmtNode(pos, self.lexer.position, symbol1, symbol2, symbol3, right, symbol4, symbol5, next)))
+                                    },
+                                    _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ':' in 'class' statement!"))))
+                                }
+                            },
+                            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ')' in 'class' statement!"))))
+                        }
+                    },
+                    Token::ColonToken( _ , _ , _ ) => {
+                        let symbol3 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+
+                        let right = self.parse_suite_stmt()?;
+
+                        Ok(Box::new(SyntaxNode::ClassDefStmtNode(pos, self.lexer.position, symbol1, symbol2, None, None, None, symbol3, right)))
+                    },
+                    _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ':' in 'class' statement!"))))
+                }
+
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting NAME after 'class'!"))))
+        }
     }
 
     fn parse_func_def_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
