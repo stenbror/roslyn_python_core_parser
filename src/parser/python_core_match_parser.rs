@@ -1,3 +1,4 @@
+use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
@@ -127,7 +128,35 @@ impl MatchPatternRules for PythonCoreParser {
 
     fn parse_case_block(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
         let pos = self.lexer.position;
-        todo!()
+
+        let symbol1 = match &*self.lexer.symbol {
+            Token::NameToken( s, e, text, t) => {
+                match text.as_str() {
+                    "case" => Box::new(Token::CaseToken(*s, *e, t.clone())),
+                    _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting 'case' keyword in 'case' block!"))))
+                }
+            },
+            _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting 'case' keyword in 'case' block!"))))
+        };
+
+        let left = self.parse_patterns()?;
+
+        let guard = match &*self.lexer.symbol {
+            Token::IfToken( _ , _ , _ ) => Some(self.parse_guard()?),
+            _ => None
+        };
+
+        match &*self.lexer.symbol {
+            Token::ColonToken( _ , _ , _ ) => {
+                let symbol2 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let right = self.parse_suite_stmt()?;
+
+                Ok(Box::new(SyntaxNode::CaseElementStmtNode(pos, self.lexer.position, symbol1, left, guard, symbol2, right)))
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ':' in 'case' block!"))))
+        }
     }
 
     fn parse_guard(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
