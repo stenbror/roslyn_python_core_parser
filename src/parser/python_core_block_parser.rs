@@ -136,7 +136,107 @@ impl BlockGrammarRules for PythonCoreParser {
     }
 
     fn parse_type_list(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+        let mut separators = Vec::<Box<Token>>::new();
+        let mut symbol1 : Option<Box<Token>> = None;
+        let mut symbol2 : Option<Box<Token>> = None;
+        let mut node1 : Option<Box<SyntaxNode>> = None;
+        let mut node2 : Option<Box<SyntaxNode>> = None;
+
+        match &*self.lexer.symbol {
+            Token::PowerToken( _ , _ , _ ) => {
+                symbol2 = Some(self.lexer.symbol.clone());
+                self.lexer.advance();
+                node2 = Some(self.parse_test_expr()?)
+            },
+            Token::MultiplyToken( _ , _ , _ ) => {
+                symbol1 = Some(self.lexer.symbol.clone());
+                self.lexer.advance();
+
+                node1 = match &*self.lexer.symbol {
+                    Token::RightParenToken( _ , _ , _ ) | Token::CommaToken( _ , _ , _ ) => None,
+                    _ => Some(self.parse_test_expr()?)
+                };
+
+                loop {
+                    match &*self.lexer.symbol {
+                        Token::CommaToken( _ , _ , _ ) => {
+                            separators.push(self.lexer.symbol.clone());
+                            self.lexer.advance();
+
+                            match &*self.lexer.symbol {
+                                Token::PowerToken( _ , _ , _ ) => {
+                                    symbol2 = Some(self.lexer.symbol.clone());
+                                    self.lexer.advance();
+
+                                    nodes.push(self.parse_test_expr()?);
+                                    break
+                                },
+                                _ => nodes.push(self.parse_test_expr()?)
+                            }
+                        },
+                        _ => break
+                    }
+                }
+            },
+            _ => {
+                nodes.push(self.parse_test_expr()?);
+
+                'outer: loop {
+                    match &*self.lexer.symbol {
+                        Token::CommaToken( _ , _ , _ ) => {
+                            separators.push(self.lexer.symbol.clone());
+                            self.lexer.advance();
+
+                            match &*self.lexer.symbol {
+                                Token::PowerToken( _ , _ , _ ) => {
+                                    symbol2 = Some(self.lexer.symbol.clone());
+                                    self.lexer.advance();
+                                    node2 = Some(self.parse_test_expr()?);
+                                    break
+                                },
+                                Token::MultiplyToken( _ , _ , _ ) => {
+                                    symbol1 = Some(self.lexer.symbol.clone());
+                                    self.lexer.advance();
+
+                                    node1 = match &*self.lexer.symbol {
+                                        Token::RightParenToken( _ , _ , _ ) | Token::CommaToken( _ , _ , _ ) => None,
+                                        _ => Some(self.parse_test_expr()?)
+                                    };
+
+                                    loop {
+                                        match &*self.lexer.symbol {
+                                            Token::CommaToken( _ , _ , _ ) => {
+                                                separators.push(self.lexer.symbol.clone());
+                                                self.lexer.advance();
+
+                                                match &*self.lexer.symbol {
+                                                    Token::PowerToken( _ , _ , _ ) => {
+                                                        symbol2 = Some(self.lexer.symbol.clone());
+                                                        self.lexer.advance();
+                                                        node2 = Some(self.parse_test_expr()?);
+                                                    },
+                                                    _ => nodes.push(self.parse_test_expr()?)
+                                                }
+                                            },
+                                            _ => break 'outer
+                                        }
+                                    }
+                                },
+                                _ => nodes.push(self.parse_test_expr()?)
+                            }
+                        },
+                        _ => break
+                    }
+                }
+            }
+        }
+
+        nodes.reverse();
+        separators.reverse();
+
+        Ok(Box::new(SyntaxNode::TypeListStmtNode(pos, self.lexer.position, nodes, separators, symbol1, node1, symbol2, node2)))
     }
 }
 
