@@ -394,7 +394,18 @@ impl BlockGrammarRules for PythonCoreParser {
     }
 
     fn parse_power_argument_element(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        match &*self.lexer.symbol {
+            Token::NameToken( _ , _ , _ , _ ) => {
+                let right = self.parse_test_expr()?;
+
+                Ok(Box::new(SyntaxNode::VarPowerElementNode(pos, self.lexer.position, symbol, right)))
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting NAME in '**' argument!"))))
+        }
     }
 
     fn parse_func_body_suite_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
