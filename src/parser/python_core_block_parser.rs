@@ -4,7 +4,6 @@ use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
-use crate::parser::syntax_nodes::SyntaxNode::TypedPowerElementNode;
 use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
@@ -19,11 +18,11 @@ pub trait BlockGrammarRules {
     fn parse_func_def_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_parameters_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_typed_args_list_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
-    fn parse_typed_element_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
-    fn parse_typed_star_element_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
-    fn parse_typed_power_element_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_tfp_def(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_var_args_list_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_argument_element(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_star_argument_element(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_power_argument_element(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_func_body_suite_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_func_type_input(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_func_type(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
@@ -310,94 +309,7 @@ impl BlockGrammarRules for PythonCoreParser {
     }
 
     fn parse_typed_args_list_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        let pos = self.lexer.position;
-        let mut nodes = Vec::<Box<SyntaxNode>>::new();
-        let mut separators = Vec::<Box<Token>>::new();
-
-        match &*self.lexer.symbol {
-            Token::PowerToken( _ , _ , _ ) => {
-                nodes.push(self.parse_typed_power_element_stmt()?);
-                Ok(Box::new(SyntaxNode::TypedListNode(pos, self.lexer.position, nodes, separators, None)))
-            },
-            Token::MultiplyToken( _ , _ , _ ) => {
-
-                todo!()
-            },
-            _ => {
-
-                todo!()
-            }
-        }
-    }
-
-    fn parse_typed_element_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        let pos = self.lexer.position;
-
-        let tc = match &*self.lexer.symbol {
-            Token::TypeCommentToken( _ , _ , _ , _ ) => {
-                let symbol1 = self.lexer.symbol.clone();
-                self.lexer.advance();
-                Some(symbol1)
-            },
-            _ => None
-        };
-
-        let left = self.parse_tfp_def()?;
-
-        let ( symbol2, right ) = match &*self.lexer.symbol {
-            Token::AssignToken( _ , _ , _ ) => {
-                let symbol1 = self.lexer.symbol.clone();
-                self.lexer.advance();
-
-                let right = self.parse_test_expr()?;
-
-                ( Some(symbol1), Some(right) )
-            },
-            _ => ( None, None )
-        };
-
-        Ok(Box::new(SyntaxNode::TypedElementNode(pos, self.lexer.position, tc, left, symbol2, right)))
-    }
-
-    fn parse_typed_star_element_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        let pos = self.lexer.position;
-        let symbol1 = self.lexer.symbol.clone();
-        self.lexer.advance();
-
-        let right = match &*self.lexer.symbol {
-            Token::CommaToken( _ , _ , _ ) |
-            Token::RightParenToken( _ , _ , _ ) => None,
-            _ => Some(self.parse_tfp_def()?)
-        };
-
-        Ok(Box::new(SyntaxNode::TypedStarElementNode(pos, self.lexer.position, symbol1, right)))
-    }
-
-    fn parse_typed_power_element_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        let pos = self.lexer.position;
-        let symbol1 = self.lexer.symbol.clone();
-        self.lexer.advance();
-        let right = self.parse_tfp_def()?;
-
-        let extra = match &*self.lexer.symbol {
-            Token::CommaToken( _ , _ , _ ) => {
-                let symbol2 = self.lexer.symbol.clone();
-                self.lexer.advance();
-                Some(symbol2)
-            },
-            _ => None
-        };
-
-        let tc = match &*self.lexer.symbol {
-            Token::TypeCommentToken( _ , _ , _ , _ ) => {
-                let symbol3 = self.lexer.symbol.clone();
-                self.lexer.advance();
-                Some(symbol3)
-            },
-            _ => None
-        };
-
-        Ok(Box::new(TypedPowerElementNode(pos, self.lexer.position, symbol1, right, extra, tc)))
+        todo!()
     }
 
     fn parse_tfp_def(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
@@ -439,6 +351,36 @@ impl BlockGrammarRules for PythonCoreParser {
                 todo!()
             }
         }
+    }
+
+    fn parse_argument_element(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        let pos = self.lexer.position;
+
+        let left = match &*self.lexer.symbol {
+            Token::NameToken( _ , _ , _ , _ ) => self.parse_atom_expr()?,
+            _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting NAME in argument!"))))
+        };
+
+        match &*self.lexer.symbol {
+            Token::AssignToken( _ , _ , _ ) => {
+                let symbol1 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let right = self.parse_test_expr()?;
+
+                Ok(Box::new(SyntaxNode::VarElementNode(0, self.lexer.position, left, symbol1, right)))
+            },
+            _ => Ok(left)
+        }
+
+    }
+
+    fn parse_star_argument_element(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_power_argument_element(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
     }
 
     fn parse_func_body_suite_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
