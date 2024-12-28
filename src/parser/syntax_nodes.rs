@@ -128,6 +128,7 @@ pub enum SyntaxNode {
     DecoratedStmtNode(u32, u32, Box<SyntaxNode>, Box<SyntaxNode>),
     DecoratorsStmtNode(u32, u32, Vec<Box<SyntaxNode>>),
     DecoratorStmtNode(u32, u32, Box<Token>, Box<SyntaxNode>, Option<Box<Token>>, Option<Box<SyntaxNode>>, Option<Box<Token>>, Box<Token>),
+    FuncDefinitionNode(u32, u32, Box<Token>, Box<Token>, Box<SyntaxNode>, Option<Box<Token>>, Option<Box<SyntaxNode>>, Box<Token>, Option<Box<Token>>, Box<SyntaxNode>),
 
 
     FuncTypeStmtNode(u32, u32, Box<Token>, Option<Box<SyntaxNode>>, Box<Token>, Box<Token>, Box<SyntaxNode>),

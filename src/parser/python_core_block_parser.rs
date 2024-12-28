@@ -229,7 +229,53 @@ impl BlockGrammarRules for PythonCoreParser {
     }
 
     fn parse_func_def_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol1 = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        match &*self.lexer.symbol {
+            Token::NameToken( _ , _ , _ , _ ) => {
+                let name = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let left = self.parse_parameters_stmt()?;
+
+                let (symbol2, node1 ) = match &*self.lexer.symbol {
+                    Token::ArrowToken( _ , _ , _ ) => {
+                        let symbol = self.lexer.symbol.clone();
+                        self.lexer.advance();
+
+                        let right = self.parse_test_expr()?;
+
+                        ( Some(symbol), Some(right) )
+                    },
+                    _ => ( None, None )
+                };
+
+                match &*self.lexer.symbol {
+                    Token::ColonToken( _ , _ , _ ) => {
+                        let symbol3 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+
+                        let tc = match &*self.lexer.symbol {
+                            Token::TypeCommentToken( _ , _ , _ , _ ) => {
+                                let symbol3 = self.lexer.symbol.clone();
+                                self.lexer.advance();
+
+                                Some(symbol3)
+                            },
+                            _ => None
+                        };
+
+                        let next = self.parse_func_body_suite_stmt()?;
+
+                        Ok(Box::new(SyntaxNode::FuncDefinitionNode(pos, self.lexer.position, symbol1, name, left, symbol2, node1, symbol3,  tc, next)))
+                    },
+                    _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ':' in 'def' statement!"))))
+                }
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting NAME after 'def'!"))))
+        }
     }
 
     fn parse_parameters_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
