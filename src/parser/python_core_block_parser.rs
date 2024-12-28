@@ -35,7 +35,21 @@ impl BlockGrammarRules for PythonCoreParser {
     }
 
     fn parse_eval_input(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let right = self.parse_test_list_expr()?;
+        let mut nodes = Vec::<Box<Token>>::new();
+
+        loop {
+            match &*self.lexer.symbol {
+                Token::NewlineToken( _ , _ , _ , _ , _ ) => {
+                    let symbol1 = self.lexer.symbol.clone();
+                    self.lexer.advance();
+                    nodes.push(symbol1)
+                },
+                Token::EofToken( _ , _ , _ ) => return Ok(Box::new(SyntaxNode::EvalInputStmtNode(pos, self.lexer.position, right, nodes, self.lexer.symbol.clone()))),
+                _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting End of file at end of eval input!"))))
+            }
+        }
     }
 
     fn parse_decorator_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
