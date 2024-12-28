@@ -322,7 +322,28 @@ impl MatchPatternRules for PythonCoreParser {
     }
 
     fn parse_keyword_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+
+        match &*self.lexer.symbol {
+            Token::NameToken( _ , _ , _ , _ ) => {
+                let symbol1 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                match &*self.lexer.symbol {
+                    Token::AssignToken( _ , _ , _ ) => {
+                        let symbol2 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+
+                        let right = self.parse_pattern()?;
+
+                        Ok(Box::new(SyntaxNode::KeywordPatternNode(pos, self.lexer.position, symbol1, symbol2, right)))
+                    },
+                    _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting '=' in 'keyword' pattern!"))))
+                }
+
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting NAME in 'keyword' pattern!"))))
+        }
     }
 }
 
