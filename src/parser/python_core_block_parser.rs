@@ -337,18 +337,122 @@ impl BlockGrammarRules for PythonCoreParser {
 
     fn parse_var_args_list_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
         let pos = self.lexer.position;
+        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+        let mut separators = Vec::<Box<Token>>::new();
         match &*self.lexer.symbol {
             Token::PowerToken( _ , _ , _ ) => {
-
-                todo!()
+                nodes.push(self.parse_power_argument_element()?);
+                Ok(Box::new(SyntaxNode::VarListNode(pos, self.lexer.position, nodes, separators, None)))
             },
             Token::MultiplyToken( _ , _ , _ ) => {
+                nodes.push(self.parse_star_argument_element()?);
 
-                todo!()
+                loop {
+                    match &*self.lexer.symbol {
+                        Token::CommaToken( _ , _ , _ ) => {
+                            separators.push(self.lexer.symbol.clone());
+                            self.lexer.advance();
+
+                            match &*self.lexer.symbol {
+                                Token::ColonToken( _ , _ , _ ) => break,
+                                Token::PowerToken( _ , _ , _ ) => {
+                                    nodes.push(self.parse_power_argument_element()?);
+
+                                    match &*self.lexer.symbol {
+                                        Token::CommaToken( _ , _ , _ ) => {
+                                            separators.push(self.lexer.symbol.clone());
+                                            self.lexer.advance()
+                                        },
+                                        _ => ()
+                                    }
+
+                                    break
+                                },
+                                _ => nodes.push(self.parse_argument_element()?)
+                            }
+                        },
+                        _ => break
+                    }
+                }
+
+                nodes.reverse();
+                separators.reverse();
+                Ok(Box::new(SyntaxNode::VarListNode(pos, self.lexer.position, nodes, separators, None)))
             },
             _ => {
+                let mut slash : Option<Box<Token>> = None;
+                nodes.push(self.parse_argument_element()?);
 
-                todo!()
+                loop {
+                    match &*self.lexer.symbol {
+                        Token::CommaToken( _ , _ , _ ) => {
+                            separators.push(self.lexer.symbol.clone());
+                            self.lexer.advance();
+
+                            match &*self.lexer.symbol {
+                                Token::DivideToken( _ , _ , _ ) => {
+                                    match &slash {
+                                        None => {
+                                            slash = Some(self.lexer.symbol.clone());
+                                            self.lexer.advance();
+                                        },
+                                        _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Already found '/' in argument list!"))))
+                                    }
+                                },
+                                Token::MultiplyToken( _ , _ , _ ) => {
+                                    nodes.push(self.parse_star_argument_element()?);
+
+                                    loop {
+                                        match &*self.lexer.symbol {
+                                            Token::CommaToken( _ , _ , _ ) => {
+                                                separators.push(self.lexer.symbol.clone());
+                                                self.lexer.advance();
+
+                                                match &*self.lexer.symbol {
+                                                    Token::ColonToken( _ , _ , _ ) => break,
+                                                    Token::PowerToken( _ , _ , _ ) => {
+                                                        nodes.push(self.parse_power_argument_element()?);
+
+                                                        match &*self.lexer.symbol {
+                                                            Token::CommaToken( _ , _ , _ ) => {
+                                                                separators.push(self.lexer.symbol.clone());
+                                                                self.lexer.advance()
+                                                            },
+                                                            _ => ()
+                                                        }
+
+                                                        break
+                                                    },
+                                                    _ => nodes.push(self.parse_argument_element()?)
+                                                }
+                                            },
+                                            _ => break
+                                        }
+                                    }
+
+                                    break
+                                },
+                                Token::PowerToken( _ , _ , _ ) => {
+                                    nodes.push(self.parse_power_argument_element()?);
+                                    match &*self.lexer.symbol {
+                                        Token::CommaToken( _ , _ , _ ) => {
+                                            separators.push(self.lexer.symbol.clone());
+                                            self.lexer.advance()
+                                        },
+                                        _ => ()
+                                    }
+                                    break
+                                },
+                                _ => nodes.push(self.parse_argument_element()?)
+                            }
+                        },
+                        _ => break
+                    }
+                }
+
+                nodes.reverse();
+                separators.reverse();
+                Ok(Box::new(SyntaxNode::VarListNode(pos, self.lexer.position, nodes, separators, slash)))
             }
         }
     }
@@ -372,7 +476,6 @@ impl BlockGrammarRules for PythonCoreParser {
             },
             _ => Ok(left)
         }
-
     }
 
     fn parse_star_argument_element(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
