@@ -102,5 +102,10 @@ pub enum Token {
     TypeCommentToken(u32, u32, Box<str>, Vec<Box<Trivia>>),
     EofToken(u32, u32, Vec<Box<Trivia>>),
 
-    Invalid
+    Invalid,
+
+    /* Context keywords */
+    MatchToken(u32, u32, Vec<Box<Trivia>>),
+    CaseToken(u32, u32, Vec<Box<Trivia>>),
+    DefaultToken(u32, u32, Vec<Box<Trivia>>)
 }

@@ -147,4 +147,5 @@ pub enum SyntaxNode {
     VarPowerElementNode(u32, u32, Box<Token>, Box<SyntaxNode>),
 
     /* Matches nodes */
+    MatchStmtNode(u32, u32, Box<Token>, Box<SyntaxNode>, Box<Token>, Box<Token>, Box<Token>, Vec<Box<SyntaxNode>>, Box<Token>),
 }
