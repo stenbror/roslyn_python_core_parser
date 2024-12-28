@@ -43,7 +43,19 @@ impl BlockGrammarRules for PythonCoreParser {
     }
 
     fn parse_decorators_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+        nodes.push(self.parse_decorator_stmt()?);
+
+        loop {
+            match &*self.lexer.symbol {
+                Token::MatricesToken( _ , _ , _ ) => nodes.push(self.parse_decorator_stmt()?),
+                _ => break
+            }
+        }
+
+        nodes.reverse();
+        Ok(Box::new(SyntaxNode::DecoratorsStmtNode(pos, self.lexer.position, nodes)))
     }
 
     fn parse_decorated_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
