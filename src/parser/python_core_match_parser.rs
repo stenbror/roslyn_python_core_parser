@@ -1,3 +1,4 @@
+use crate::parser::python_core_expression_parser::ExpressionRules;
 use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
@@ -160,7 +161,19 @@ impl MatchPatternRules for PythonCoreParser {
     }
 
     fn parse_guard(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+
+        match &*self.lexer.symbol {
+            Token::IfToken( _ , _ , _ ) => {
+                let symbol1 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let right = self.parse_named_expr()?;
+
+                Ok(Box::new(SyntaxNode::GuardElementStmtNode(pos, self.lexer.position, symbol1, right)))
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting 'if' keyword in 'case' guard!"))))
+        }
     }
 
     fn parse_patterns(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
