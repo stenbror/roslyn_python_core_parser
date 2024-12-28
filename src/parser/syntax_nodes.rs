@@ -148,7 +148,7 @@ pub enum SyntaxNode {
 
     /* Matches nodes */
     MatchStmtNode(u32, u32, Box<Token>, Box<SyntaxNode>, Box<Token>, Box<Token>, Box<Token>, Vec<Box<SyntaxNode>>, Box<Token>),
-
+    SubjectExprNode(u32, u32, Box<SyntaxNode>, Option<Box<Token>>, Option<Box<SyntaxNode>>),
     CaseElementStmtNode(u32, u32, Box<Token>, Box<SyntaxNode>, Option<Box<SyntaxNode>>, Box<Token>, Box<SyntaxNode>),
     GuardElementStmtNode(u32, u32, Box<Token>, Box<SyntaxNode>),
 }

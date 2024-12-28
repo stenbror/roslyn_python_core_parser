@@ -124,7 +124,28 @@ impl MatchPatternRules for PythonCoreParser {
     }
 
     fn parse_subject_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        match &*self.lexer.symbol {
+            Token::MultiplyToken( _ , _ , _ ) => {
+                let left = self.parse_star_expr()?;
+
+                match &*self.lexer.symbol {
+                    Token::CommaToken( _ , _ , _ ) => {
+                        let symbol = self.lexer.symbol.clone();
+                        self.lexer.advance();
+
+                        let right = self.parse_star_expr()?;
+
+                        Ok(Box::new(SyntaxNode::SubjectExprNode(pos, self.lexer.position, left, Some(symbol), Some(right))))
+                    },
+                    _ => Ok(Box::new(SyntaxNode::SubjectExprNode(pos, self.lexer.position, left, None, None)))
+                }
+            },
+            _ => {
+                let left = self.parse_named_expr()?;
+                Ok(Box::new(SyntaxNode::SubjectExprNode(pos, self.lexer.position, left, None, None)))
+            }
+        }
     }
 
     fn parse_case_block(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
