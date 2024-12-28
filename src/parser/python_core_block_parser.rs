@@ -376,7 +376,21 @@ impl BlockGrammarRules for PythonCoreParser {
     }
 
     fn parse_star_argument_element(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        match &*self.lexer.symbol {
+            Token::AssignToken( _ , _ , _ ) => {
+                let symbol1 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let right = self.parse_test_expr()?;
+
+                Ok(Box::new(SyntaxNode::VarStarElementNode(pos, self.lexer.position, symbol, Some(right))))
+            },
+            _ => Ok(Box::new(SyntaxNode::VarStarElementNode(pos, self.lexer.position, symbol, None)))
+        }
     }
 
     fn parse_power_argument_element(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
