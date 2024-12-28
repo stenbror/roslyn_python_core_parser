@@ -335,7 +335,17 @@ impl BlockGrammarRules for PythonCoreParser {
     }
 
     fn parse_typed_star_element_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol1 = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        let right = match &*self.lexer.symbol {
+            Token::CommaToken( _ , _ , _ ) |
+            Token::RightParenToken( _ , _ , _ ) => None,
+            _ => Some(self.parse_tfp_def()?)
+        };
+
+        Ok(Box::new(SyntaxNode::TypedStarElementNode(pos, self.lexer.position, symbol1, right)))
     }
 
     fn parse_typed_power_element_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
