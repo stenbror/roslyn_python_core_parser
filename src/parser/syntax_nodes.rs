@@ -123,6 +123,10 @@ pub enum SyntaxNode {
     EvalInputStmtNode(u32, u32, Box<SyntaxNode>, Vec<Box<Token>>, Box<Token>),
     FuncTypeInputStmtNode(u32, u32, Box<SyntaxNode>, Vec<Box<Token>>, Box<Token>),
 
+    DecoratedStmtNode(u32, u32, Box<SyntaxNode>, Box<SyntaxNode>),
+    DecoratorsStmtNode(u32, u32, Vec<Box<SyntaxNode>>),
+    DecoratorStmtNode(u32, u32, Box<Token>, Box<SyntaxNode>, Option<Box<Token>>, Option<Box<SyntaxNode>>, Option<Box<Token>>, Box<Token>),
+
 
     FuncTypeStmtNode(u32, u32, Box<Token>, Option<Box<SyntaxNode>>, Box<Token>, Box<Token>, Box<SyntaxNode>),
     TypeListStmtNode(u32, u32, Vec<Box<SyntaxNode>>, Vec<Box<Token>>, Option<Box<Token>>, Option<Box<SyntaxNode>>, Option<Box<Token>>, Option<Box<SyntaxNode>>),

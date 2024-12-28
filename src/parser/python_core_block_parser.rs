@@ -47,7 +47,16 @@ impl BlockGrammarRules for PythonCoreParser {
     }
 
     fn parse_decorated_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let left = self.parse_decorators_stmt()?;
+        let right = match &*self.lexer.symbol {
+            Token::ClassToken( _ , _ , _ ) => self.parse_class_stmt()?,
+            Token::AsyncToken( _ , _ , _ ) => self.parse_async_stmt()?,
+            Token::DefToken( _ , _ , _ ) => self.parse_func_def_stmt()?,
+            _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting 'class', 'def' or 'async' after decorators!"))))
+        };
+
+        Ok(Box::new(SyntaxNode::DecoratedStmtNode(pos, self.lexer.position, left, right)))
     }
 
     fn parse_class_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
