@@ -79,12 +79,31 @@ impl MatchPatternRules for PythonCoreParser {
                         let symbol4 = self.lexer.symbol.clone();
                         self.lexer.advance();
 
-                        nodes.push(self.parse_case_block()?);
+                        /* First case must be available */
+                        match &*self.lexer.symbol {
+                            Token::NameToken( _ , _ , text, _ ) => {
+                                if text.as_str() == "case" {
+                                    nodes.push(self.parse_case_block()?)
+                                }
+                                else {
+                                    return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting at least one 'case' keyword in 'match' statement!"))))
+                                }
+                            },
+                            _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting at least one 'case' keyword in 'match' statement!"))))
+                        }
 
+                        /* Optional rest of cases */
                         loop {
                             match &*self.lexer.symbol {
-                                Token::DedentToken( _ , _ , _ ) => break,
-                                _ => nodes.push(self.parse_case_block()?)
+                                Token::NameToken( _ , _ , text, _ ) => {
+                                    if text.as_str() == "case" {
+                                        nodes.push(self.parse_case_block()?)
+                                    }
+                                    else {
+                                        break;
+                                    }
+                                },
+                                _ => break
                             }
                         }
 
@@ -107,6 +126,7 @@ impl MatchPatternRules for PythonCoreParser {
     }
 
     fn parse_case_block(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        let pos = self.lexer.position;
         todo!()
     }
 
