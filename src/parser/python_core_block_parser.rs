@@ -4,6 +4,7 @@ use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
+use crate::parser::syntax_nodes::SyntaxNode::TypedPowerElementNode;
 use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
@@ -18,6 +19,9 @@ pub trait BlockGrammarRules {
     fn parse_func_def_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_parameters_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_typed_args_list_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_typed_element_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_typed_star_element_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_typed_power_element_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_tfp_def(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_var_args_list_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_func_body_suite_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
@@ -321,6 +325,41 @@ impl BlockGrammarRules for PythonCoreParser {
                 todo!()
             }
         }
+    }
+
+    fn parse_typed_element_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_typed_star_element_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_typed_power_element_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        let pos = self.lexer.position;
+        let symbol1 = self.lexer.symbol.clone();
+        self.lexer.advance();
+        let right = self.parse_tfp_def()?;
+
+        let extra = match &*self.lexer.symbol {
+            Token::CommaToken( _ , _ , _ ) => {
+                let symbol2 = self.lexer.symbol.clone();
+                self.lexer.advance();
+                Some(symbol2)
+            },
+            _ => None
+        };
+
+        let tc = match &*self.lexer.symbol {
+            Token::TypeCommentToken( _ , _ , _ , _ ) => {
+                let symbol3 = self.lexer.symbol.clone();
+                self.lexer.advance();
+                Some(symbol3)
+            },
+            _ => None
+        };
+
+        Ok(Box::new(TypedPowerElementNode(pos, self.lexer.position, symbol1, right, extra, tc)))
     }
 
     fn parse_tfp_def(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
