@@ -31,7 +31,26 @@ impl BlockGrammarRules for PythonCoreParser {
     }
 
     fn parse_file_input(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+        let mut separators = Vec::<Box<Token>>::new();
+
+        loop {
+            match &*self.lexer.symbol {
+                Token::EofToken( _ , _ , _ ) => {
+                    nodes.reverse();
+                    separators.reverse();
+
+                    return Ok(Box::new(SyntaxNode::FileInputStmtNode(pos, self.lexer.position, nodes, separators, self.lexer.symbol.clone())))
+            },
+                Token::NewlineToken( _ , _ , _ , _ , _ ) => {
+                    let symbol = self.lexer.symbol.clone();
+                    self.lexer.advance();
+                    separators.push(symbol)
+                },
+                _ => nodes.push(self.parse_stmt()?),
+            }
+        }
     }
 
     fn parse_eval_input(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
