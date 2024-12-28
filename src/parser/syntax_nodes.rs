@@ -138,5 +138,15 @@ pub enum SyntaxNode {
     ParametersNode(u32, u32, Box<Token>, Option<Box<SyntaxNode>>, Box<Token>),
     TypedFormalParameterNode(u32, u32, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>),
 
+    TypedListNode(u32, u32, Vec::<Box<SyntaxNode>>, Vec::<Box<Token>>, Option<Box<Token>>),
+    TypedElementNode(u32, u32, Option<Box<Token>>, Box<SyntaxNode>, Option<Box<Token>>, Option<Box<SyntaxNode>>),
+    TypedStarElementNode(u32, u32, Box<Token>, Option<Box<SyntaxNode>>),
+    TypedPowerElementNode(u32, u32, Box<Token>, Box<SyntaxNode>, Option<Box<Token>>, Option<Box<Token>>),
+
+    VarListNode(u32, u32, Vec::<Box<SyntaxNode>>, Vec::<Box<Token>>, Option<Box<Token>>),
+    VarElementNode(u32, u32, Box<SyntaxNode>, Option<Box<Token>>, Option<Box<SyntaxNode>>),
+    VarStarElementNode(u32, u32, Box<Token>, Option<Box<SyntaxNode>>),
+    VarPowerElementNode(u32, u32, Box<Token>, Box<SyntaxNode>),
+
     /* Matches nodes */
 }

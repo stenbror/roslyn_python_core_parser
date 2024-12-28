@@ -306,7 +306,21 @@ impl BlockGrammarRules for PythonCoreParser {
     }
 
     fn parse_typed_args_list_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        match &*self.lexer.symbol {
+            Token::PowerToken( _ , _ , _ ) => {
+
+                todo!()
+            },
+            Token::MultiplyToken( _ , _ , _ ) => {
+
+                todo!()
+            },
+            _ => {
+
+                todo!()
+            }
+        }
     }
 
     fn parse_tfp_def(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
@@ -333,7 +347,21 @@ impl BlockGrammarRules for PythonCoreParser {
     }
 
     fn parse_var_args_list_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        match &*self.lexer.symbol {
+            Token::PowerToken( _ , _ , _ ) => {
+
+                todo!()
+            },
+            Token::MultiplyToken( _ , _ , _ ) => {
+
+                todo!()
+            },
+            _ => {
+
+                todo!()
+            }
+        }
     }
 
     fn parse_func_body_suite_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
