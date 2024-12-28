@@ -311,10 +311,13 @@ impl BlockGrammarRules for PythonCoreParser {
 
     fn parse_typed_args_list_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
         let pos = self.lexer.position;
+        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+        let mut separators = Vec::<Box<Token>>::new();
+
         match &*self.lexer.symbol {
             Token::PowerToken( _ , _ , _ ) => {
-
-                todo!()
+                nodes.push(self.parse_typed_power_element_stmt()?);
+                Ok(Box::new(SyntaxNode::TypedListNode(pos, self.lexer.position, nodes, separators, None)))
             },
             Token::MultiplyToken( _ , _ , _ ) => {
 
