@@ -27,7 +27,38 @@ pub trait BlockGrammarRules {
 
 impl BlockGrammarRules for PythonCoreParser {
     fn parse_single_input(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        match &*self.lexer.symbol {
+            Token::NewlineToken( _ , _ , _ , _ , _ ) => {
+                let symbol1 = self.lexer.symbol.clone();
+                self.lexer.advance();
+                Ok(Box::new(SyntaxNode::SingleInputStmtNode(pos, self.lexer.position, None, Some(symbol1))))
+            },
+            Token::IfToken( _ , _ , _ ) |
+            Token::WhileToken( _ , _ , _ ) |
+            Token::ForToken( _ , _ , _ ) |
+            Token::TryToken( _ , _ , _ ) |
+            Token::WithToken( _ , _ , _ ) |
+            Token::DefToken( _ , _ , _ ) |
+            Token::ClassToken( _ , _ , _ ) |
+            Token::MatricesToken( _ , _ , _ ) |
+            Token::AsyncToken( _ , _ , _ ) => {
+                let right = self.parse_stmt()?;
+
+                match &*self.lexer.symbol {
+                    Token::NewlineToken( _ , _ , _ , _ , _ ) => {
+                        let symbol2 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+                        Ok(Box::new(SyntaxNode::SingleInputStmtNode(pos, self.lexer.position, Some(right), Some(symbol2))))
+                    },
+                    _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting NEWLINE after statement in single input!"))))
+                }
+            },
+            _ => {
+                let right = self.parse_simple_stmt()?;
+                Ok(Box::new(SyntaxNode::SingleInputStmtNode(pos, self.lexer.position, Some(right), None)))
+            }
+        }
     }
 
     fn parse_file_input(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
@@ -42,7 +73,7 @@ impl BlockGrammarRules for PythonCoreParser {
                     separators.reverse();
 
                     return Ok(Box::new(SyntaxNode::FileInputStmtNode(pos, self.lexer.position, nodes, separators, self.lexer.symbol.clone())))
-            },
+                },
                 Token::NewlineToken( _ , _ , _ , _ , _ ) => {
                     let symbol = self.lexer.symbol.clone();
                     self.lexer.advance();
