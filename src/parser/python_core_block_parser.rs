@@ -1,4 +1,5 @@
 use crate::parser::python_core_expression_parser::ExpressionRules;
+use crate::parser::python_core_statement_parser::StatementRules;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
@@ -74,7 +75,60 @@ impl BlockGrammarRules for PythonCoreParser {
     }
 
     fn parse_func_body_suite_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+        let mut tc : Option<Box<Token>> = None;
+        let mut tc_nl : Option<Box<Token>> = None;
+
+        match &*self.lexer.symbol {
+            Token::NewlineToken( _ , _ , _ , _ , _ ) => {
+                let symbol1 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                /* Type Comment handling */
+                match &*self.lexer.symbol {
+                    Token::TypeCommentToken( _ , _ , _ , _ ) => {
+                        tc = Some(self.lexer.symbol.clone());
+                        self.lexer.advance();
+
+                        match &*self.lexer.symbol {
+                            Token::NewlineToken( _ , _ , _ , _ , _ ) => {
+                                tc_nl = Some(self.lexer.symbol.clone());
+                                self.lexer.advance()
+                            },
+                            _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting NEWLINE after type comment in func body!"))))
+                        }
+                    },
+                    _ => ()
+                }
+
+                /* Body block */
+                match &*self.lexer.symbol {
+                    Token::IndentToken( _ , _ , _ ) => {
+                        let symbol2 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+
+                        nodes.push (self.parse_stmt()?);
+
+                        loop {
+                            match &*self.lexer.symbol {
+                                Token::DedentToken( _ , _ , _ ) => {
+                                    let symbol3 = self.lexer.symbol.clone();
+                                    self.lexer.advance();
+
+                                    nodes.reverse();
+
+                                    return Ok(Box::new(SyntaxNode::FuncBodyStmtNode(pos, self.lexer.position, symbol1, tc, tc_nl, symbol2, nodes, symbol3)))
+                                },
+                                _ => nodes.push (self.parse_stmt()?)
+                            }
+                        }
+                    },
+                    _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting Indent in func body!"))))
+                }
+            },
+            _ => self.parse_simple_stmt()
+        }
     }
 
     fn parse_func_type_input(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
