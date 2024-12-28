@@ -39,7 +39,44 @@ impl BlockGrammarRules for PythonCoreParser {
     }
 
     fn parse_decorator_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let symbol1 = self.lexer.symbol.clone();
+        self.lexer.advance();
+        let left = self.parse_dotted_name_stmt()?;
+
+        match &*self.lexer.symbol {
+            Token::LeftParenToken( _ , _ , _ ) => {
+                let symbol2 = Some(self.lexer.symbol.clone());
+                self.lexer.advance();
+                let right = match &*self.lexer.symbol {
+                    Token::RightParenToken( _ , _ , _ ) => None,
+                    _ => Some(self.parse_arg_list_expr()?)
+                };
+                match &*self.lexer.symbol {
+                    Token::RightParenToken( _ , _ , _ ) => {
+                        let symbol3 = Some(self.lexer.symbol.clone());
+                        self.lexer.advance();
+
+                        match &*self.lexer.symbol {
+                            Token::NewlineToken( _ , _ , _ , _ , _ ) => {
+                                let symbol4 = self.lexer.symbol.clone();
+                                self.lexer.advance();
+
+                                Ok(Box::new(SyntaxNode::DecoratorStmtNode(pos, self.lexer.position, symbol1, left, symbol2, right, symbol3, symbol4)))
+                            },
+                            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting NEWLINE after decorator argument name!"))))
+                        }
+                    },
+                    _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ')' after decorator argument name!"))))
+                }
+            },
+            Token::NewlineToken( _ , _ , _ , _ , _ ) => {
+                let symbol4 = self.lexer.symbol.clone();
+                self.lexer.advance();
+                Ok(Box::new(SyntaxNode::DecoratorStmtNode(pos, self.lexer.position, symbol1, left, None, None, None, symbol4)))
+            }
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting '(' or NEWLINE after decorator name!"))))
+        }
     }
 
     fn parse_decorators_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
