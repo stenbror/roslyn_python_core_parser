@@ -8,6 +8,39 @@ pub trait MatchPatternRules {
     fn parse_match_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_subject_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_case_block(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_guard(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_patterns(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_as_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_or_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_closed_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_literal_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_literal_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_complex_number(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_signed_number(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_signed_real_number(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_real_number(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_imaginary_number(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_capture_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_pattern_capture_target(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_wildcard_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_value_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_attribute_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_name_or_attr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_group_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_sequence_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_open_sequence_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_maybe_sequence_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_maybe_star_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_star_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_mapping_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_items_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_key_value_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_double_star_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_class_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_positional_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_keywords_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_keyword_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
 }
 
 impl MatchPatternRules for PythonCoreParser {
@@ -74,6 +107,138 @@ impl MatchPatternRules for PythonCoreParser {
     }
 
     fn parse_case_block(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_guard(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_patterns(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_as_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_or_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_closed_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_literal_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_literal_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_complex_number(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_signed_number(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_signed_real_number(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_real_number(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_imaginary_number(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_capture_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_pattern_capture_target(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_wildcard_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_value_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_attribute_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_name_or_attr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_group_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_sequence_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_open_sequence_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_maybe_sequence_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_maybe_star_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_star_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_mapping_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_items_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_key_value_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_double_star_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_class_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_positional_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_keywords_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_keyword_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
         todo!()
     }
 }
