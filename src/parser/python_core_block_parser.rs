@@ -233,7 +233,30 @@ impl BlockGrammarRules for PythonCoreParser {
     }
 
     fn parse_parameters_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        match &*self.lexer.symbol {
+            Token::LeftParenToken( _ , _ , _ ) => {
+                let symbol1 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let right = match &*self.lexer.symbol {
+                    Token::RightParenToken( _ , _ , _ ) => None,
+                    _ => Some(self.parse_typed_args_list_stmt()?)
+                };
+
+                match &*self.lexer.symbol {
+                    Token::RightParenToken( _ , _ , _ ) => {
+                        let symbol2 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+
+                        Ok(Box::new(SyntaxNode::ParametersNode(pos, self.lexer.position, symbol1, right, symbol2)))
+                    },
+                    _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ')' in function declaration!"))))
+                }
+
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting '(' in function declaration!"))))
+        }
     }
 
     fn parse_typed_args_list_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {

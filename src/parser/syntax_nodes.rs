@@ -134,6 +134,7 @@ pub enum SyntaxNode {
     TypeListStmtNode(u32, u32, Vec<Box<SyntaxNode>>, Vec<Box<Token>>, Option<Box<Token>>, Option<Box<SyntaxNode>>, Option<Box<Token>>, Option<Box<SyntaxNode>>),
     FuncBodyStmtNode(u32, u32, Box<Token>, Option<Box<Token>>, Option<Box<Token>>, Box<Token>, Vec<Box<SyntaxNode>>, Box<Token>),
     ClassDefStmtNode(u32, u32, Box<Token>, Box<Token>, Option<Box<Token>>, Option<Box<SyntaxNode>>, Option<Box<Token>>, Box<Token>, Box<SyntaxNode>),
+    ParametersNode(u32, u32, Box<Token>, Option<Box<SyntaxNode>>, Box<Token>),
 
     /* Matches nodes */
 }
