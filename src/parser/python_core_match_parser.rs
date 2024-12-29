@@ -206,7 +206,19 @@ impl MatchPatternRules for PythonCoreParser {
     }
 
     fn parse_as_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let left = self.parse_or_pattern()?;
+
+        match &*self.lexer.symbol {
+            Token::AsToken( _ , _ , _ ) => {
+                let symbol = self.lexer.symbol.clone();
+                self.lexer.advance();
+                let right = self.parse_capture_pattern()?;
+
+                Ok(Box::new(SyntaxNode::MatchAsPattern(pos, self.lexer.position, left, symbol, right)))
+            },
+            _ => Ok(left)
+        }
     }
 
     fn parse_or_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {

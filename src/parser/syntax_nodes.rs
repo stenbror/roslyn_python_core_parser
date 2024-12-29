@@ -152,6 +152,8 @@ pub enum SyntaxNode {
     CaseElementStmtNode(u32, u32, Box<Token>, Box<SyntaxNode>, Option<Box<SyntaxNode>>, Box<Token>, Box<SyntaxNode>),
     GuardElementStmtNode(u32, u32, Box<Token>, Box<SyntaxNode>),
 
+    MatchAsPattern(u32, u32, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>),
+
     DefaultPatterNode(u32, u32, Box<Token>),
 
     KeywordPatternNode(u32, u32, Box<Token>, Box<Token>, Box<SyntaxNode>),
