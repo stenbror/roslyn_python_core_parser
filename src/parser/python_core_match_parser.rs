@@ -6,7 +6,7 @@ use crate::parser::syntax_nodes::SyntaxNode;
 use crate::parser::token_nodes::Token;
 use super::python_core_parser::PythonCoreParser;
 
-pub trait MatchPatternRules {
+pub(crate) trait MatchPatternRules {
     fn parse_match_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_subject_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_case_block(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;

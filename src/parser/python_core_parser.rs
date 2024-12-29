@@ -8,7 +8,7 @@ pub struct PythonCoreParser
 }
 
 impl PythonCoreParser {
-    fn new() -> PythonCoreParser { PythonCoreParser{
+    pub(crate) fn new() -> PythonCoreParser { PythonCoreParser{
         lexer: Box::new(PythonCoreTokenizer::new())
     } }
 }

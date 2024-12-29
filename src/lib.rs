@@ -1,7 +1,8 @@
-mod parser;
+pub(crate) mod parser;
 
-use crate::parser::*;
+use crate::parser::python_core_parser::PythonCoreParser;
 
-fn main() {
-    println!("Hello, world!");
+pub(crate) fn parse_stuff() -> Result<(), ()> {
+    let parser = PythonCoreParser::new();
+    Ok(())
 }
