@@ -222,7 +222,31 @@ impl MatchPatternRules for PythonCoreParser {
     }
 
     fn parse_or_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+        let mut symbols = Vec::<Box<Token>>::new();
+
+        let left = self.parse_closed_pattern()?;
+
+        loop {
+            match &*self.lexer.symbol {
+                Token::BitOrToken( _ , _ , _ ) => {
+                     symbols.push(self.lexer.symbol.clone());
+                    self.lexer.advance();
+
+                    nodes.push(self.parse_closed_pattern()?)
+                },
+                _ => break
+            }
+        }
+
+        nodes.reverse();
+        symbols.reverse();
+
+        match &symbols.len() {
+            1 => Ok(left),
+            _ => Ok(Box::new(SyntaxNode::MatchOrPatterns(pos, self.lexer.position, left, symbols, nodes)))
+        }
     }
 
     fn parse_closed_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
