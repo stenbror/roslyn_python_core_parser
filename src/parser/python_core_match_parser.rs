@@ -432,7 +432,19 @@ impl MatchPatternRules for PythonCoreParser {
     }
 
     fn parse_double_star_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+
+        match &*self.lexer.symbol {
+            Token::PowerToken( _ , _ , _ ) => {
+                let symbol1 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let right = self.parse_pattern_capture_target()?;
+
+                Ok(Box::new(SyntaxNode::DoubleStarPatterNode(pos, self.lexer.position, symbol1, right)))
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting '**' in 'double star' pattern!"))))
+        }
     }
 
     fn parse_class_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {

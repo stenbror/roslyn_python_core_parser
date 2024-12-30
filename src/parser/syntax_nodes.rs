@@ -159,5 +159,7 @@ pub enum SyntaxNode {
     DefaultPatterNode(u32, u32, Box<Token>),
 
     MappingPatternNode(u32, u32, Box<Token>, Vec<Box<SyntaxNode>>, Vec<Box<Token>>,Box<Token>),
+
+    DoubleStarPatterNode(u32, u32, Box<Token>, Box<SyntaxNode>),
     KeywordPatternNode(u32, u32, Box<Token>, Box<Token>, Box<SyntaxNode>),
 }
