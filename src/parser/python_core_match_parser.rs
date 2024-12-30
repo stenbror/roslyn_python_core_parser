@@ -36,7 +36,6 @@ pub(crate) trait MatchPatternRules {
     fn parse_maybe_star_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_star_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_mapping_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
-    fn parse_items_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_key_value_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_double_star_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_class_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
@@ -344,11 +343,88 @@ impl MatchPatternRules for PythonCoreParser {
     }
 
     fn parse_mapping_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
-    }
+        let pos = self.lexer.position;
+        match &*self.lexer.symbol {
+            Token::LeftCurlyBracketToken( _ , _ , _ ) => {
+                let symbol1 = self.lexer.symbol.clone();
+                self.lexer.advance();
 
-    fn parse_items_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+                let mut nodes = Vec::<Box<SyntaxNode>>::new();
+                let mut separators = Vec::<Box<Token>>::new();
+
+                match &*self.lexer.symbol {
+                    Token::RightCurlyBracketToken( _ , _ , _ ) => { /* Empty mapping structure */
+                        let symbol2 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+
+                        Ok(Box::new(SyntaxNode::MappingPatternNode(pos, self.lexer.position, symbol1, nodes, separators, symbol2)))
+                    },
+                    Token::PowerToken( _ , _ , _ ) => { /* Mapping structure with double star pattern only */
+                        nodes.push(self.parse_double_star_pattern()?);
+
+                        match &*self.lexer.symbol {
+                            Token::CommaToken( _ , _ , _ ) => {
+                                separators.push(self.lexer.symbol.clone());
+                                self.lexer.advance()
+                            },
+                            _ => ()
+                        }
+
+                        match &*self.lexer.symbol {
+                            Token::RightCurlyBracketToken( _ , _ , _ ) => {
+                                let symbol2 = self.lexer.symbol.clone();
+                                self.lexer.advance();
+
+                                Ok(Box::new(SyntaxNode::MappingPatternNode(pos, self.lexer.position, symbol1, nodes, separators, symbol2)))
+                            },
+                            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting '}' in 'mapping' pattern!"))))
+                        }
+                    },
+                    _ => { /* More mappings pattern given */
+                        nodes.push(self.parse_keyword_pattern()?);
+
+                        loop {
+                            match &*self.lexer.symbol {
+                                Token::CommaToken( _ , _ , _ ) => {
+                                    separators.push(self.lexer.symbol.clone());
+                                    self.lexer.advance();
+
+                                    match &*self.lexer.symbol {
+                                        Token::PowerToken( _ , _ , _ ) => {
+                                            nodes.push(self.parse_double_star_pattern()?);
+
+                                            match &*self.lexer.symbol {
+                                                Token::CommaToken( _ , _ , _ ) => {
+                                                    separators.push(self.lexer.symbol.clone());
+                                                    self.lexer.advance()
+                                                },
+                                                _ => ()
+                                            }
+
+                                            break
+                                        },
+                                        Token::RightCurlyBracketToken( _ , _ , _ ) => break,
+                                        _ => nodes.push(self.parse_keyword_pattern()?)
+                                    }
+                                },
+                                _ => break
+                            }
+                        }
+
+                        match &*self.lexer.symbol {
+                            Token::RightCurlyBracketToken( _ , _ , _ ) => {
+                                let symbol2 = self.lexer.symbol.clone();
+                                self.lexer.advance();
+
+                                Ok(Box::new(SyntaxNode::MappingPatternNode(pos, self.lexer.position, symbol1, nodes, separators, symbol2)))
+                            },
+                            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting '}' in 'mapping' pattern!"))))
+                        }
+                    }
+                }
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting '{' in 'mapping' pattern!"))))
+        }
     }
 
     fn parse_key_value_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
