@@ -18,11 +18,6 @@ pub(crate) trait MatchPatternRules {
     fn parse_closed_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_literal_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_literal_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
-    fn parse_complex_number(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
-    fn parse_signed_number(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
-    fn parse_signed_real_number(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
-    fn parse_real_number(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
-    fn parse_imaginary_number(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_capture_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_pattern_capture_target(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_wildcard_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
@@ -257,27 +252,52 @@ impl MatchPatternRules for PythonCoreParser {
     }
 
     fn parse_literal_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
-    }
+        let pos = self.lexer.position;
 
-    fn parse_complex_number(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
-    }
+        match &*self.lexer.symbol {
+            Token::StringToken( _ , _ , _ , _ ) |
+            Token::NoneToken( _ , _ , _ ) |
+            Token::FalseToken( _ , _ , _ ) |
+            Token::TrueToken( _ , _ , _ )=> Ok(self.parse_atom_expr()?),
+            Token::NumberToken( _ , _ , _ , _ ) |
+            Token::MinusToken( _ , _ , _ ) => {
+                /* Handle signed for number */
+                let signed = match &*self.lexer.symbol {
+                    Token::PlusToken( _ , _ , _ ) |
+                    Token::MinusToken( _ , _ , _ ) => {
+                        let symbol = self.lexer.symbol.clone();
+                        self.lexer.advance();
+                        Some(symbol)
+                    },
+                    _ => None
+                };
 
-    fn parse_signed_number(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
-    }
+                match &*self.lexer.symbol {
+                    Token::NumberToken( _ , _ , _ , _ ) => {
+                        let left = self.parse_atom_expr()?;
 
-    fn parse_signed_real_number(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
-    }
+                        match &*self.lexer.symbol {
+                            Token::PlusToken( _ , _ , _ ) |
+                            Token::MinusToken( _ , _ , _ ) => {
+                                let symbol2 = self.lexer.symbol.clone();
+                                self.lexer.advance();
 
-    fn parse_real_number(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
-    }
+                                match &*self.lexer.symbol {
+                                    Token::NumberToken( _ , _ , _ , _ ) => {
+                                        let right = self.parse_atom_expr()?;
 
-    fn parse_imaginary_number(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+                                        Ok(Box::new(SyntaxNode::SignedImaginaryNumberNode(pos, self.lexer.position, signed, left, symbol2, right)))
+                                    },
+                                    _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting Number literal expression!"))))
+                                }
+                            }, _ => Ok(Box::new(SyntaxNode::SignedNumberNode(pos, self.lexer.position, signed, left)))
+                        }
+                    },
+                    _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting literal expression!"))))
+                }
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting literal expression!"))))
+        }
     }
 
     fn parse_capture_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
