@@ -244,7 +244,27 @@ impl MatchPatternRules for PythonCoreParser {
     }
 
     fn parse_closed_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        match &*self.lexer.symbol {
+            Token::LeftCurlyBracketToken( _ , _ , _ ) => Ok(self.parse_mapping_pattern()?),
+            Token::LeftSquareBracketToken( _ , _ , _ ) => Ok(self.parse_sequence_pattern()?),
+            Token::LeftParenToken( _ , _ , _ ) => {
+                // Handle gtoup pattern | sequence pattern TODO!
+                Ok(self.parse_group_pattern()?)
+            },
+            Token::NumberToken( _ , _ , _ , _ ) |
+            Token::StringToken( _ , _ , _ , _ ) |
+            Token::NoneToken( _ , _ , _ ) |
+            Token::TrueToken( _ , _ , _ ) |
+            Token::FalseToken( _ , _ , _ ) => Ok(self.parse_literal_pattern()?),
+            Token::NameToken( _ , _ , text, _ ) => {
+                match text.as_str() {
+                    "_" => Ok(self.parse_wildcard_pattern()?),
+                    // value pattern | class pattern | capture pattern
+                    _ => Ok(self.parse_name_or_attr()?) // TODO!
+                }
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting pattern!"))))
+        }
     }
 
     fn parse_literal_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
