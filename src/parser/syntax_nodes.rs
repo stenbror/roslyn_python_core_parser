@@ -162,6 +162,7 @@ pub enum SyntaxNode {
 
     SignedNumberNode(u32, u32, Option<Box<Token>>, Box<SyntaxNode>),
     SignedImaginaryNumberNode(u32, u32, Option<Box<Token>>, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>),
+    NameAttributeNode(u32, u32, Vec<Box<SyntaxNode>>, Vec<Box<Token>>),
 
     KeyValuePatternNode(u32, u32, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>),
     DoubleStarPatterNode(u32, u32, Box<Token>, Box<SyntaxNode>),

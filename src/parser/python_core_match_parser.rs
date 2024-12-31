@@ -263,7 +263,6 @@ impl MatchPatternRules for PythonCoreParser {
             Token::MinusToken( _ , _ , _ ) => {
                 /* Handle signed for number */
                 let signed = match &*self.lexer.symbol {
-                    Token::PlusToken( _ , _ , _ ) |
                     Token::MinusToken( _ , _ , _ ) => {
                         let symbol = self.lexer.symbol.clone();
                         self.lexer.advance();
@@ -335,7 +334,36 @@ impl MatchPatternRules for PythonCoreParser {
     }
 
     fn parse_name_or_attr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+        let mut separators = Vec::<Box<Token>>::new();
+
+        match &*self.lexer.symbol {
+            Token::NameToken( _ , _ , _ , _ ) => {
+                nodes.push(self.parse_atom_expr()?);
+
+                loop {
+                    match &*self.lexer.symbol {
+                        Token::PeriodToken( _ , _ , _ ) => {
+                            separators.push(self.lexer.symbol.clone());
+                            self.lexer.advance();
+
+                            match &*self.lexer.symbol {
+                                Token::NameToken( _ , _ , _ , _ ) => nodes.push(self.parse_atom_expr()?),
+                                _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting name after '.'!"))))
+                            }
+                        }
+                        _ => break
+                    }
+                }
+
+                nodes.reverse();
+                separators.reverse();
+
+                Ok(Box::new(SyntaxNode::NameAttributeNode(pos, self.lexer.position, nodes, separators)))
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting name or attribute!"))))
+        }
     }
 
     fn parse_group_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
