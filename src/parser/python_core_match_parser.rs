@@ -387,7 +387,22 @@ impl MatchPatternRules for PythonCoreParser {
     }
 
     fn parse_star_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+
+        match &*self.lexer.symbol {
+            Token::MultiplyToken( _ , _ , _ ) => {
+                let symbol = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let right = match &*self.lexer.symbol {
+                    Token::NameToken( _ , _ , text , _ ) => self.parse_wildcard_pattern()?,
+                    _ => self.parse_pattern_capture_target()?
+                };
+
+                Ok(Box::new(SyntaxNode::StarPatternNode(pos, self.lexer.position, symbol, right)))
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting '*' in 'star' pattern!"))))
+        }
     }
 
     fn parse_mapping_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
