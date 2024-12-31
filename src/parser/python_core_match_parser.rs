@@ -12,12 +12,10 @@ pub(crate) trait MatchPatternRules {
     fn parse_case_block(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_guard(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_patterns(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
-    fn parse_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_as_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_or_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_closed_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_literal_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
-    fn parse_literal_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_capture_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_pattern_capture_target(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_wildcard_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
@@ -192,11 +190,46 @@ impl MatchPatternRules for PythonCoreParser {
     }
 
     fn parse_patterns(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
-    }
+        let pos = self.lexer.position;
+        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+        let mut separators = Vec::<Box<Token>>::new();
 
-    fn parse_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        /* First element or only element */
+        match &*self.lexer.symbol {
+            Token::MultiplyToken( _ , _ , _ ) => nodes.push(self.parse_star_pattern()?),
+            _ => nodes.push(self.parse_as_pattern()?)
+        }
+
+        loop {
+            match &*self.lexer.symbol {
+                Token::CommaToken( _ , _ , _ ) => {
+                    separators.push(self.lexer.symbol.clone());
+                    self.lexer.advance();
+
+                    match &*self.lexer.symbol {
+                        Token::RightParenToken( _ , _ , _ ) |
+                        Token::RightSquareBracketToken( _ , _ , _ ) |
+                        Token::IfToken( _ , _ , _ ) |
+                        Token::ColonToken( _ , _ , _ ) => break,
+                        _ => {
+                            match &*self.lexer.symbol {
+                                Token::MultiplyToken( _ , _ , _ ) => nodes.push(self.parse_star_pattern()?),
+                                _ => nodes.push(self.parse_as_pattern()?)
+                            }
+                        }
+                    }
+                },
+                _ => break
+            }
+        }
+
+        nodes.reverse();
+        separators.reverse();
+
+        match nodes.len() {
+            1 => Ok(nodes.pop().unwrap()),
+            _ => Ok(Box::new(SyntaxNode::PatternListNode(pos, self.lexer.position, nodes, separators)))
+        }
     }
 
     fn parse_as_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
@@ -268,10 +301,6 @@ impl MatchPatternRules for PythonCoreParser {
     }
 
     fn parse_literal_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
-    }
-
-    fn parse_literal_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
         let pos = self.lexer.position;
 
         match &*self.lexer.symbol {
@@ -515,7 +544,7 @@ impl MatchPatternRules for PythonCoreParser {
 
         let left = match &*self.lexer.symbol {
             Token::NameToken( _ , _ , _ , _ ) => self.parse_name_or_attr()?,
-            _ => self.parse_literal_expr()?
+            _ => self.parse_literal_pattern()?
         };
 
         match &*self.lexer.symbol {
@@ -523,7 +552,7 @@ impl MatchPatternRules for PythonCoreParser {
                 let symbol1 = self.lexer.symbol.clone();
                 self.lexer.advance();
 
-                let right = self.parse_pattern()?;
+                let right = self.parse_as_pattern()?;
 
                 Ok(Box::new(SyntaxNode::KeyValuePatternNode(pos, self.lexer.position, left, symbol1, right)))
             },
@@ -572,7 +601,7 @@ impl MatchPatternRules for PythonCoreParser {
                         let symbol2 = self.lexer.symbol.clone();
                         self.lexer.advance();
 
-                        let right = self.parse_pattern()?;
+                        let right = self.parse_as_pattern()?;
 
                         Ok(Box::new(SyntaxNode::KeywordPatternNode(pos, self.lexer.position, symbol1, symbol2, right)))
                     },

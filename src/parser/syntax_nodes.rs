@@ -152,7 +152,7 @@ pub enum SyntaxNode {
     CaseElementStmtNode(u32, u32, Box<Token>, Box<SyntaxNode>, Option<Box<SyntaxNode>>, Box<Token>, Box<SyntaxNode>),
     GuardElementStmtNode(u32, u32, Box<Token>, Box<SyntaxNode>),
 
-
+    PatternListNode(u32, u32, Vec::<Box<SyntaxNode>>, Vec::<Box<Token>>),
     MatchAsPattern(u32, u32, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>),
     MatchOrPatterns(u32, u32, Box<SyntaxNode>, Vec<Box<Token>>, Vec<Box<SyntaxNode>>),
 
