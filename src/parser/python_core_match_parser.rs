@@ -24,9 +24,6 @@ pub(crate) trait MatchPatternRules {
     fn parse_name_or_attr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_group_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_sequence_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
-    fn parse_open_sequence_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
-    fn parse_maybe_sequence_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
-    fn parse_maybe_star_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_star_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_mapping_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_key_value_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
@@ -420,19 +417,105 @@ impl MatchPatternRules for PythonCoreParser {
     }
 
     fn parse_sequence_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
-    }
+        let pos = self.lexer.position;
+        match &*self.lexer.symbol {
+            Token::LeftParenToken( _ , _ , _ ) => {
+                let symbol1 = self.lexer.symbol.clone();
+                self.lexer.advance();
 
-    fn parse_open_sequence_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
-    }
+                match &*self.lexer.symbol {
+                    Token::RightParenToken( _ , _ , _ ) => {
+                        let symbol2 = self.lexer.symbol.clone();
+                        self.lexer.advance();
 
-    fn parse_maybe_sequence_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
-    }
+                        Ok(Box::new(SyntaxNode::SequenceTuplePatternNode(pos, self.lexer.position, symbol1, Vec::new(), Vec::new(), symbol2)))
+                    },
+                    _ => {
+                        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+                        let mut separators = Vec::<Box<Token>>::new();
 
-    fn parse_maybe_star_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+                        nodes.push(self.parse_star_pattern()?);
+
+                        loop {
+                            match &*self.lexer.symbol {
+                                Token::CommaToken( _ , _ , _ ) => {
+                                    separators.push(self.lexer.symbol.clone());
+                                    self.lexer.advance();
+
+                                    match &*self.lexer.symbol {
+                                        Token::RightParenToken( _ , _ , _ ) => break,
+                                        _ => nodes.push(self.parse_star_pattern()?)
+                                    }
+                                },
+                                _ => break
+                            }
+                        }
+
+                        match &*self.lexer.symbol {
+                            Token::RightParenToken( _ , _ , _ ) => {
+                                let symbol2 = self.lexer.symbol.clone();
+                                self.lexer.advance();
+
+                                nodes.reverse();
+                                separators.reverse();
+
+                                Ok(Box::new(SyntaxNode::SequenceTuplePatternNode(pos, self.lexer.position, symbol1, nodes, separators, symbol2)))
+                            },
+                            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ')' in 'sequence' pattern!"))))
+                        }
+                    }
+                }
+            },
+            Token::LeftSquareBracketToken( _ , _ , _ ) => {
+                let symbol1 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                match &*self.lexer.symbol {
+                    Token::RightSquareBracketToken( _ , _ , _ ) => {
+                        let symbol2 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+
+                        Ok(Box::new(SyntaxNode::SequenceSquarePatternNode(pos, self.lexer.position, symbol1, Vec::new(), Vec::new(), symbol2)))
+                    },
+                    _ => {
+                        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+                        let mut separators = Vec::<Box<Token>>::new();
+
+                        nodes.push(self.parse_star_pattern()?);
+
+                        loop {
+                            match &*self.lexer.symbol {
+                                Token::CommaToken( _ , _ , _ ) => {
+                                    separators.push(self.lexer.symbol.clone());
+                                    self.lexer.advance();
+
+                                    match &*self.lexer.symbol {
+                                        Token::RightSquareBracketToken( _ , _ , _ ) => break,
+                                        _ => nodes.push(self.parse_star_pattern()?)
+                                    }
+                                },
+                                _ => break
+                            }
+                        }
+
+                        match &*self.lexer.symbol {
+                            Token::RightSquareBracketToken( _ , _ , _ ) => {
+                                let symbol2 = self.lexer.symbol.clone();
+                                self.lexer.advance();
+
+                                nodes.reverse();
+                                separators.reverse();
+
+                                Ok(Box::new(SyntaxNode::SequenceSquarePatternNode(pos, self.lexer.position, symbol1, nodes, separators, symbol2)))
+                            },
+                            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ']' in 'sequence' pattern!"))))
+                        }
+                    }
+                }
+
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting '(' or '[' in 'sequence' pattern!"))))
+        }
     }
 
     fn parse_star_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
