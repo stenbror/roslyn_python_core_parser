@@ -214,7 +214,32 @@ impl MatchPatternRules for PythonCoreParser {
     }
 
     fn parse_open_sequence_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+        let mut separators = Vec::<Box<Token>>::new();
+
+        nodes.push(match &*self.lexer.symbol { Token::MultiplyToken( _ , _ , _ ) => self.parse_star_pattern()?, _ => self.parse_as_pattern()?});
+
+        loop {
+            match &*self.lexer.symbol {
+                Token::CommaToken( _ , _ , _ ) => {
+                    separators.push(self.lexer.symbol.clone());
+                    self.lexer.advance();
+
+                    match &*self.lexer.symbol {
+                        Token::IfToken( _ , _ , _ ) |
+                        Token::ColonToken( _ , _ , _ ) => break,
+                        _ => nodes.push(match &*self.lexer.symbol { Token::MultiplyToken( _ , _ , _ ) => self.parse_star_pattern()?, _ => self.parse_as_pattern()?})
+                    }
+                },
+                _ => break
+            }
+        }
+
+        nodes.reverse();
+        separators.reverse();
+
+        Ok(Box::new(SyntaxNode::OpenSequencePatternNode(pos, self.lexer.position, nodes, separators)))
     }
 
     fn parse_star_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {

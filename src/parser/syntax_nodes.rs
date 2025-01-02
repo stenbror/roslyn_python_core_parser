@@ -158,6 +158,7 @@ pub enum SyntaxNode {
     MatchOrPatterns(u32, u32, Box<SyntaxNode>, Vec<Box<Token>>, Vec<Box<SyntaxNode>>),
 
     DefaultPatterNode(u32, u32, Box<Token>),
+    OpenSequencePatternNode(u32, u32, Vec<Box<SyntaxNode>>, Vec<Box<Token>>),
 
     MappingPatternNode(u32, u32, Box<Token>, Vec<Box<SyntaxNode>>, Vec<Box<Token>>,Box<Token>),
 
