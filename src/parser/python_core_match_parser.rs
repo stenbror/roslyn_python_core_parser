@@ -17,7 +17,6 @@ pub(crate) trait MatchPatternRules {
     fn parse_as_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_or_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_closed_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
-    fn parse_literal_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
 
     fn parse_wildcard_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_sequence_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
@@ -226,18 +225,47 @@ impl MatchPatternRules for PythonCoreParser {
 
     fn parse_closed_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
         let pos = self.lexer.position;
-
         match &*self.lexer.symbol {
             Token::FalseToken( _ , _ , _ ) |
             Token::TrueToken( _ , _ , _ ) |
             Token::NoneToken( _ , _ , _ ) |
-            Token::MinusToken( _ , _ , _ ) |
-            Token::NumberToken( _ , _ , _ , _ ) |
-            Token::StringToken( _ , _ , _ , _ ) => self.parse_literal_pattern(),
+            Token::StringToken( _ , _ , _ , _ ) => self.parse_atom_expr(),
             Token::NameToken( _ , _ , text , _ ) => {
                 match text.as_str() {
                     "_" => self.parse_wildcard_pattern(),
                     _ => self.parse_class_pattern() // Handle calue, capture, class
+                }
+            },
+            Token::MinusToken( _ , _ , _ ) |
+            Token::NumberToken( _ , _ , _ , _ ) => {
+                let minus = match &*self.lexer.symbol {
+                    Token::MinusToken( _ , _ , _ ) => {
+                        let symbol1 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+                        Some(symbol1)
+                    },
+                    _ => None
+                };
+
+                let left = match &*self.lexer.symbol {
+                    Token::NumberToken( _ , _ , _ , _ ) => self.parse_atom_expr()?,
+                    _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting number in closed pattern!"))))
+                };
+
+                match &*self.lexer.symbol {
+                    Token::PlusToken( _ , _ , _ ) |
+                    Token::MinusToken( _ , _ , _ ) => {
+                        let symbol = self.lexer.symbol.clone();
+                        self.lexer.advance();
+
+                        let right = match &*self.lexer.symbol {
+                            Token::NumberToken( _ , _ , _ , _ ) => self.parse_atom_expr()?,
+                            _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting number in closed pattern!"))))
+                        };
+
+                        Ok(Box::new(SyntaxNode::SignedImaginaryNumberNode(pos, self.lexer.position, minus, left, symbol, right)))
+                    },
+                    _ => Ok(Box::new(SyntaxNode::SignedNumberNode(pos, self.lexer.position, minus, left)))
                 }
             },
             Token::LeftCurlyBracketToken( _ , _ , _ ) => self.parse_mappings_pattern(),
@@ -247,12 +275,22 @@ impl MatchPatternRules for PythonCoreParser {
         }
     }
 
-    fn parse_literal_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
-    }
-
     fn parse_wildcard_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        match &*self.lexer.symbol {
+            Token::NameToken( s , e , text, t ) => {
+                match text.as_str() {
+                    "_" => {
+                        let symbol1 = Box::new(DefaultToken(*s, *e, t.clone()));
+                        self.lexer.advance();
+
+                        Ok(Box::new(SyntaxNode::DefaultPatterNode(pos, self.lexer.position, symbol1)))
+                    },
+                    _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting '_' in wildcard pattern!"))))
+                }
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting '_' in wildcard pattern!"))))
+        }
     }
 
     fn parse_sequence_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
