@@ -163,8 +163,8 @@ pub enum SyntaxNode {
 
     MappingPatternNode(u32, u32, Box<Token>, Vec<Box<SyntaxNode>>, Vec<Box<Token>>,Box<Token>),
 
-    SequenceSquarePatternNode(u32, u32, Box<Token>, Vec<Box<SyntaxNode>>, Vec<Box<Token>>,Box<Token>),
-    SequenceTuplePatternNode(u32, u32, Box<Token>, Vec<Box<SyntaxNode>>, Vec<Box<Token>>,Box<Token>),
+    SequenceSquarePatternNode(u32, u32, Box<Token>, Option<Box<SyntaxNode>>, Box<Token>),
+    SequenceTuplePatternNode(u32, u32, Box<Token>, Option<Box<SyntaxNode>>, Box<Token>),
     SignedNumberNode(u32, u32, Option<Box<Token>>, Box<SyntaxNode>),
     SignedImaginaryNumberNode(u32, u32, Option<Box<Token>>, Box<SyntaxNode>, Box<Token>, Box<SyntaxNode>),
     NameAttributeNode(u32, u32, Vec<Box<SyntaxNode>>, Vec<Box<Token>>),

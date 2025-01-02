@@ -299,7 +299,62 @@ impl MatchPatternRules for PythonCoreParser {
     }
 
     fn parse_sequence_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+        match &*self.lexer.symbol {
+            Token::LeftParenToken( _ , _ , _ ) => {
+                let symbol1 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                match &*self.lexer.symbol {
+                    Token::RightParenToken( _ , _ , _ ) => {
+                        let symbol2 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+
+                        Ok(Box::new(SyntaxNode::SequenceTuplePatternNode(pos, self.lexer.position, symbol1, None, symbol2)))
+                    },
+                    _ => {
+                        let right = self.parse_open_sequence_pattern()?;
+
+                        match &*self.lexer.symbol {
+                            Token::RightParenToken( _ , _ , _ ) => {
+                                let symbol2 = self.lexer.symbol.clone();
+                                self.lexer.advance();
+
+                                Ok(Box::new(SyntaxNode::SequenceTuplePatternNode(pos, self.lexer.position, symbol1, Some(right), symbol2)))
+                            },
+                            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ')' in sequence pattern!"))))
+                        }
+                    }
+                }
+            },
+            Token::LeftSquareBracketToken( _ , _ , _ ) => {
+                let symbol1 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                match &*self.lexer.symbol {
+                    Token::RightSquareBracketToken( _ , _ , _ ) => {
+                        let symbol2 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+
+                        Ok(Box::new(SyntaxNode::SequenceSquarePatternNode(pos, self.lexer.position, symbol1, None, symbol2)))
+                    },
+                    _ => {
+                        let right = self.parse_open_sequence_pattern()?; // Maybee...
+
+                        match &*self.lexer.symbol {
+                            Token::RightSquareBracketToken( _ , _ , _ ) => {
+                                let symbol2 = self.lexer.symbol.clone();
+                                self.lexer.advance();
+
+                                Ok(Box::new(SyntaxNode::SequenceSquarePatternNode(pos, self.lexer.position, symbol1, Some(right), symbol2)))
+                            },
+                            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ']' in sequence pattern!"))))
+                        }
+                    }
+                }
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting '(' or '[' in sequence pattern!"))))
+        }
     }
 
     fn parse_mappings_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
