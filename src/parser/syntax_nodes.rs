@@ -70,6 +70,7 @@ pub enum SyntaxNode {
     CompIfExprNode(u32, u32, Box<Token>, Box<SyntaxNode>, Option<Box<SyntaxNode>>),
     YieldExprNode(u32, u32, Box<Token>, Box<SyntaxNode>),
     YieldFromExprNode(u32, u32, Box<Token>, Box<Token>, Box<SyntaxNode>),
+    StarExprNamedExprListNode(u32, u32, Vec<Box<SyntaxNode>>, Vec<Box<Token>>),
 
     /* Statement nodes */
     SimpleStmtNode(u32, u32, Vec<Box<SyntaxNode>>, Vec<Box<Token>>, Box<Token>),

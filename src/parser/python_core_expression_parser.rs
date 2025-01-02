@@ -41,6 +41,8 @@ pub(crate) trait ExpressionRules {
     fn parse_comp_for_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_comp_if_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_yield_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_star_expr_named_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_star_expr_named_exp_elements(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
 }
 
 // Implementing all expression grammar rules ///////////////////////////////////////////////////////
@@ -1084,6 +1086,41 @@ impl ExpressionRules for PythonCoreParser {
                 Ok(Box::new(SyntaxNode::YieldExprNode(pos, self.lexer.position, symbol1, right)))
             }
         }
+    }
+
+    fn parse_star_expr_named_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        match &*self.lexer.symbol {
+            Token::MultiplyToken( _ , _ , _ ) => self.parse_star_expr(),
+            _ => self.parse_named_expr()
+        }
+    }
+
+    fn parse_star_expr_named_exp_elements(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        let pos = self.lexer.position;
+        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+        let mut separators = Vec::<Box<Token>>::new();
+
+        nodes.push(self.parse_star_expr_named_expr()?);
+
+        loop {
+            match &*self.lexer.symbol {
+                Token::CommaToken( _ , _ , _ ) => {
+                    separators.push(self.lexer.symbol.clone());
+                    self.lexer.advance();
+
+                    match &*self.lexer.symbol {
+                        Token::ColonToken( _ , _ , _ ) => break,
+                        _ => nodes.push(self.parse_star_expr_named_expr()?)
+                    }
+                },
+                _ => break
+            }
+        }
+
+        nodes.reverse();
+        separators.reverse();
+
+        Ok(Box::new(SyntaxNode::StarExprNamedExprListNode(pos, self.lexer.position, nodes, separators)))
     }
 }
 

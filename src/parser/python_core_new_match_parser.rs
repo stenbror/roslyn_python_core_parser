@@ -1,3 +1,4 @@
+use crate::parser::python_core_expression_parser::ExpressionRules;
 use crate::parser::python_core_parser::PythonCoreParser;
 use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
@@ -116,7 +117,10 @@ impl MatchPatternRulesNew for PythonCoreParser {
     }
 
     fn parse_subject_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        match &*self.lexer.symbol {
+            Token::MultiplyToken( _ , _ , _ ) => self.parse_star_expr_named_exp_elements(),
+            _ => self.parse_named_expr()
+        }
     }
 
     fn parse_case_block(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
