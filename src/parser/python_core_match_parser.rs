@@ -12,6 +12,13 @@ pub(crate) trait MatchPatternRules {
     fn parse_case_block(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_guard_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_patterns(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_as_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_or_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+
+
+    fn parse_capture_target(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+
+    fn parse_open_sequence_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
 }
 
 impl MatchPatternRules for PythonCoreParser {
@@ -156,6 +163,55 @@ impl MatchPatternRules for PythonCoreParser {
     }
 
     fn parse_patterns(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        match &*self.lexer.symbol {
+            Token::MultiplyToken( _ , _ , _ ) => self.parse_open_sequence_pattern(),
+            _ => self.parse_as_pattern()
+        }
+    }
+
+    fn parse_as_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        let pos = self.lexer.position;
+        let left = self.parse_or_pattern()?;
+
+        match &*self.lexer.symbol {
+            Token::AsToken( _ , _ , _ ) => {
+                let symbol1 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let right = self.parse_capture_target()?;
+                Ok(Box::new(SyntaxNode::MatchAsPattern(pos, self.lexer.position, left, symbol1, right)))
+            },
+            _ => Ok(left)
+        }
+    }
+
+    fn parse_or_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
+
+    fn parse_capture_target(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        let pos = self.lexer.position;
+        match &*self.lexer.symbol {
+            Token::NameToken( _ , _ , text, _ ) => {
+                match text.as_str() {
+                    "_" => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Cannot capture '_' in 'as' pattern!")))),
+                    _ => {
+                        let right = self.parse_atom_expr()?;
+
+                        match &*self.lexer.symbol {
+                            Token::PeriodToken( _ , _ , _ ) |
+                            Token::LeftParenToken( _ , _ , _ ) |
+                            Token::AssignToken( _ , _ , _ ) => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Cannot have '.', '(' or '=' after NAME in 'as' pattern!")))),
+                            _ => Ok(right)
+                        }
+                    }
+                }
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting variable name in 'as' pattern!"))))
+        }
+    }
+
+    fn parse_open_sequence_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
         todo!()
     }
 }
