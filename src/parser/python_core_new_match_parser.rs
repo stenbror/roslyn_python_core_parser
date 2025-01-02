@@ -4,31 +4,13 @@ use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
 use crate::parser::token_nodes::Token;
-// Refactor match parser to a LL(1) parser. New rules not based on Python grammar 3.13 but will parse equal 3.13
-
-// match_stmt:  'match' subject_expr ':' NEWLINE INDENT case_blocks+ DEDENT
-//
-// Child nodes are:   subject_expr and case_blocks
-//
-//
-//
-//
-//
-//
-//
-//
-//
-
-
-
 
 pub(crate) trait MatchPatternRulesNew {
     fn parse_match_stmt_new(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_subject_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
-
-
-
     fn parse_case_block(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_guard_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_patterns(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
 }
 
 impl MatchPatternRulesNew for PythonCoreParser {
@@ -124,6 +106,22 @@ impl MatchPatternRulesNew for PythonCoreParser {
     }
 
     fn parse_case_block(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        unimplemented!()
+    }
+
+    fn parse_guard_expr(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        let pos = self.lexer.position;
+
+        /* Must be 'if' or else, do not call this rule */
+        let symbol1 = self.lexer.symbol.clone();
+        self.lexer.advance();
+
+        let right = self.parse_named_expr()?;
+
+        Ok(Box::new(SyntaxNode::GuardElementStmtNode(pos, self.lexer.position, symbol1, right)))
+    }
+
+    fn parse_patterns(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
         todo!()
     }
 }
