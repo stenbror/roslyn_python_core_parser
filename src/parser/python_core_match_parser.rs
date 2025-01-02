@@ -393,7 +393,61 @@ impl MatchPatternRules for PythonCoreParser {
     }
 
     fn parse_key_value_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
+        let pos = self.lexer.position;
+
+        let left = match &*self.lexer.symbol {
+            Token::NoneToken( _ , _ , _ ) |
+            Token::FalseToken( _ , _ , _ ) |
+            Token::TrueToken( _ , _ , _ ) |
+            Token::StringToken( _ , _ , _ , _ ) => self.parse_atom_expr()?,
+            Token::MinusToken( _ , _ , _ ) |
+            Token::NumberToken( _ , _ , _ , _ ) => {
+
+                let minus = match &*self.lexer.symbol {
+                    Token::MinusToken( _ , _ , _ ) => {
+                        let symbol1 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+                        Some(symbol1)
+                    },
+                    _ => None
+                };
+
+                let left = match &*self.lexer.symbol {
+                    Token::NumberToken( _ , _ , _ , _ ) => self.parse_atom_expr()?,
+                    _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting number in closed pattern!"))))
+                };
+
+                match &*self.lexer.symbol {
+                    Token::PlusToken( _ , _ , _ ) |
+                    Token::MinusToken( _ , _ , _ ) => {
+                        let symbol = self.lexer.symbol.clone();
+                        self.lexer.advance();
+
+                        let right = match &*self.lexer.symbol {
+                            Token::NumberToken( _ , _ , _ , _ ) => self.parse_atom_expr()?,
+                            _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting number in closed pattern!"))))
+                        };
+
+                        Box::new(SyntaxNode::SignedImaginaryNumberNode(pos, self.lexer.position, minus, left, symbol, right))
+                    },
+                    _ => Box::new(SyntaxNode::SignedNumberNode(pos, self.lexer.position, minus, left))
+                }
+            },
+            _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting 'key' pattern in mappings pattern!"))))
+        };
+
+        let symbol = match &*self.lexer.symbol {
+            Token::ColonToken( _ , _ , _ ) => {
+                let symbol10 = self.lexer.symbol.clone();
+                self.lexer.advance();
+                symbol10
+            },
+            _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting ':' in mappings pattern!"))))
+        };
+
+        let right = self.parse_as_pattern()?;
+
+        Ok(Box::new(SyntaxNode::KeyValuePatternNode(pos, self.lexer.position, left, symbol, right)))
     }
 
     fn parse_power_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
