@@ -21,6 +21,10 @@ pub(crate) trait MatchPatternRules {
     fn parse_wildcard_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_sequence_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_mappings_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_key_value_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_power_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+
+
     fn parse_class_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
 
     fn parse_capture_target(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
@@ -298,8 +302,115 @@ impl MatchPatternRules for PythonCoreParser {
     }
 
     fn parse_mappings_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        let pos = self.lexer.position;
+        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+        let mut separators = Vec::<Box<Token>>::new();
+
+        match &*self.lexer.symbol {
+            Token::LeftCurlyBracketToken( _ , _ , _ ) => {
+                let symbol1 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                match &*self.lexer.symbol {
+                    Token::RightCurlyBracketToken( _ , _ , _ ) => { /* Empty mapping */
+                        let symbol2 = self.lexer.symbol.clone();
+                        self.lexer.advance();
+
+                        Ok(Box::new(SyntaxNode::MappingPatternNode(pos, self.lexer.position, symbol1, Vec::new(), Vec::new(), symbol2)))
+                    },
+                    Token::PowerToken( _ , _ , _ ) => { /* Single '**' element with optional ',' */
+                        nodes.push(self.parse_power_argument_element()?);
+
+                        match &*self.lexer.symbol {
+                            Token::CommaToken( _ , _ , _ ) => {
+                                separators.push(self.lexer.symbol.clone());
+                                self.lexer.advance()
+                            },
+                            _ => ()
+                        }
+
+                        let symbol2 = match &*self.lexer.symbol {
+                            Token::RightCurlyBracketToken( _ , _ , _ ) => {
+                                let symbol10 = self.lexer.symbol.clone();
+                                self.lexer.advance();
+                                symbol10
+                            },
+                            _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting '}' in mappings pattern!"))))
+                        };
+
+                        Ok(Box::new(SyntaxNode::MappingPatternNode(pos, self.lexer.position, symbol1, nodes, separators, symbol2)))
+                    },
+                    _ => { /* elements */
+
+                        nodes.push(self.parse_key_value_pattern()?);
+
+                        loop {
+                            match &*self.lexer.symbol {
+                                Token::CommaToken( _ , _ , _ ) => {
+                                    separators.push(self.lexer.symbol.clone());
+                                    self.lexer.advance();
+
+                                    match &*self.lexer.symbol {
+                                        Token::RightParenToken( _ , _ , _ ) => break,
+                                        Token::PowerToken( _ , _ , _ ) => {
+                                            nodes.push(self.parse_power_argument_element()?);
+
+                                            match &*self.lexer.symbol {
+                                                Token::CommaToken( _ , _ , _ ) => {
+                                                    separators.push(self.lexer.symbol.clone());
+                                                    self.lexer.advance()
+                                                },
+                                                _ => ()
+                                            }
+
+                                            break
+                                        },
+                                        _ => nodes.push(self.parse_key_value_pattern()?)
+                                    }
+                                },
+                                _ => break
+                            }
+                        }
+
+                        nodes.reverse();
+                        separators.reverse();
+
+                        let symbol2 = match &*self.lexer.symbol {
+                            Token::RightCurlyBracketToken( _ , _ , _ ) => {
+                                let symbol10 = self.lexer.symbol.clone();
+                                self.lexer.advance();
+                                symbol10
+                            },
+                            _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting '}' in mappings pattern!"))))
+                        };
+
+                        Ok(Box::new(SyntaxNode::MappingPatternNode(pos, self.lexer.position, symbol1, nodes, separators, symbol2)))
+                    }
+                }
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting '{' in mappings pattern!"))))
+        }
+    }
+
+    fn parse_key_value_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
         todo!()
     }
+
+    fn parse_power_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        let pos = self.lexer.position;
+        match &*self.lexer.symbol {
+            Token::PowerToken( _ , _ , _ ) => {
+                let symbol1 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                let right = self.parse_capture_target()?;
+
+                Ok(Box::new(SyntaxNode::DoubleStarPatterNode(pos, self.lexer.position, symbol1, right)))
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting '**' in power pattern!"))))
+        }
+    }
+
 
     fn parse_class_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
         todo!()
