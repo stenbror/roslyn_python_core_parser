@@ -8,4 +8,3 @@ pub(crate) mod python_core_match_parser;
 pub(crate) mod python_core_block_parser;
 pub(crate) mod python_core_tokenizer;
 pub(crate) mod syntax_error;
-mod python_core_new_match_parser;
