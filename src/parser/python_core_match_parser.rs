@@ -22,6 +22,7 @@ pub(crate) trait MatchPatternRules {
     fn parse_sequence_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_mappings_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_key_value_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_attr_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_power_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
 
 
@@ -396,6 +397,7 @@ impl MatchPatternRules for PythonCoreParser {
         let pos = self.lexer.position;
 
         let left = match &*self.lexer.symbol {
+            Token::NameToken( _ , _ , _ , _ ) => self.parse_attr_pattern()?,
             Token::NoneToken( _ , _ , _ ) |
             Token::FalseToken( _ , _ , _ ) |
             Token::TrueToken( _ , _ , _ ) |
@@ -448,6 +450,39 @@ impl MatchPatternRules for PythonCoreParser {
         let right = self.parse_as_pattern()?;
 
         Ok(Box::new(SyntaxNode::KeyValuePatternNode(pos, self.lexer.position, left, symbol, right)))
+    }
+
+    fn parse_attr_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        let pos = self.lexer.position;
+        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+        let mut separators = Vec::<Box<Token>>::new();
+
+        match &*self.lexer.symbol {
+            Token::NameToken( _ , _ , _ , _ ) => {
+                nodes.push(self.parse_atom_expr()?);
+
+                loop {
+                    match &*self.lexer.symbol {
+                        Token::PeriodToken( _ , _ , _ ) => {
+                            separators.push(self.lexer.symbol.clone());
+                            self.lexer.advance();
+
+                            match &*self.lexer.symbol {
+                                Token::NameToken( _ , _ , _ , _ ) => nodes.push(self.parse_atom_expr()?),
+                                _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting 'name' in 'key' pattern in mappings pattern!"))))
+                            }
+                        },
+                        _ => break
+                    }
+                }
+
+                nodes.reverse();
+                separators.reverse();
+
+                Ok(Box::new(SyntaxNode::NameAttributeNode(pos, self.lexer.position, nodes, separators)))
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting NAME in 'key' pattern in mappings pattern!"))))
+        }
     }
 
     fn parse_power_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
