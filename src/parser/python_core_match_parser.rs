@@ -15,6 +15,7 @@ pub(crate) trait MatchPatternRules {
     fn parse_patterns(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_as_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_or_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_closed_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
 
 
     fn parse_capture_target(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
@@ -188,8 +189,45 @@ impl MatchPatternRules for PythonCoreParser {
     }
 
     fn parse_or_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        let pos = self.lexer.position;
+        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+        let mut separators = Vec::<Box<Token>>::new();
+
+        let left = self.parse_closed_pattern()?;
+
+        loop {
+            match &*self.lexer.symbol {
+                Token::BitOrToken( _ , _ , _ ) => {
+                    separators.push(self.lexer.symbol.clone());
+                    self.lexer.advance();
+
+                    nodes.push(self.parse_closed_pattern()?);
+                },
+                _ => break
+            }
+        }
+
+        match separators.len() {
+            0 => Ok(left), /* No or '|' patterns found */
+            _ => {
+                nodes.reverse();
+                separators.reverse();
+
+                Ok(Box::new(SyntaxNode::MatchOrPatterns(pos, self.lexer.position, left, separators, nodes)))
+            }
+        }
+    }
+
+    fn parse_closed_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
         todo!()
     }
+
+
+
+
+
+
+
 
     fn parse_capture_target(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
         let pos = self.lexer.position;
