@@ -5,6 +5,7 @@ use crate::parser::python_core_tokenizer::LexerMethods;
 use crate::parser::syntax_error::SyntaxError;
 use crate::parser::syntax_nodes::SyntaxNode;
 use crate::parser::token_nodes::Token;
+use crate::parser::token_nodes::Token::DefaultToken;
 
 pub(crate) trait MatchPatternRules {
     fn parse_match_stmt(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
@@ -19,6 +20,7 @@ pub(crate) trait MatchPatternRules {
     fn parse_capture_target(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
 
     fn parse_open_sequence_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_star_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
 }
 
 impl MatchPatternRules for PythonCoreParser {
@@ -213,5 +215,39 @@ impl MatchPatternRules for PythonCoreParser {
 
     fn parse_open_sequence_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
         todo!()
+    }
+
+    fn parse_star_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        let pos = self.lexer.position;
+
+        match &*self.lexer.symbol {
+            Token::MultiplyToken( _ , _ , _ ) => {
+                let symbol1 = self.lexer.symbol.clone();
+                self.lexer.advance();
+
+                match &*self.lexer.symbol {
+                    Token::NameToken( s , e , text, t ) => {
+                        match text.as_str() {
+                            "_" => {
+                                let symbol2 = Box::new(DefaultToken(*s, *e, t.clone()));
+                                self.lexer.advance();
+
+                                let right = Box::new(SyntaxNode::DefaultPatterNode(pos, self.lexer.position, symbol2));
+
+                                Ok(Box::new(SyntaxNode::StarPatternNode(pos, self.lexer.position, symbol1, right)))
+                            },
+                            _ => {
+                                let right = self.parse_atom_expr()?;
+
+                                Ok(Box::new(SyntaxNode::StarPatternNode(pos, self.lexer.position, symbol1, right)))
+                            }
+                        }
+                    },
+                    _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting variable name in '*' pattern!"))))
+                }
+
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting '*' in '*' pattern!"))))
+        }
     }
 }
