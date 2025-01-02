@@ -591,3 +591,12 @@ impl MatchPatternRules for PythonCoreParser {
         }
     }
 }
+
+// Unittests for match grammar rules ///////////////////////////////////////////////////////////////
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn dummy_test() {
+        assert_eq!(1 == 1, true);
+    }
+}
