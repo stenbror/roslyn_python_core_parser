@@ -1,3 +1,4 @@
+use crate::parser::python_core_block_parser::BlockGrammarRules;
 use crate::parser::python_core_expression_parser::ExpressionRules;
 use crate::parser::python_core_parser::PythonCoreParser;
 use crate::parser::python_core_statement_parser::StatementRules;
@@ -16,7 +17,12 @@ pub(crate) trait MatchPatternRules {
     fn parse_as_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_or_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
     fn parse_closed_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_literal_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
 
+    fn parse_wildcard_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_sequence_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_mappings_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
+    fn parse_class_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
 
     fn parse_capture_target(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>>;
 
@@ -219,14 +225,47 @@ impl MatchPatternRules for PythonCoreParser {
     }
 
     fn parse_closed_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        let pos = self.lexer.position;
+
+        match &*self.lexer.symbol {
+            Token::FalseToken( _ , _ , _ ) |
+            Token::TrueToken( _ , _ , _ ) |
+            Token::NoneToken( _ , _ , _ ) |
+            Token::MinusToken( _ , _ , _ ) |
+            Token::NumberToken( _ , _ , _ , _ ) |
+            Token::StringToken( _ , _ , _ , _ ) => self.parse_literal_pattern(),
+            Token::NameToken( _ , _ , text , _ ) => {
+                match text.as_str() {
+                    "_" => self.parse_wildcard_pattern(),
+                    _ => self.parse_class_pattern() // Handle calue, capture, class
+                }
+            },
+            Token::LeftCurlyBracketToken( _ , _ , _ ) => self.parse_mappings_pattern(),
+            Token::LeftParenToken( _ , _ , _ ) |
+            Token::LeftSquareBracketToken( _ , _ , _ ) => self.parse_sequence_pattern(),
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting pattern!"))))
+        }
+    }
+
+    fn parse_literal_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
         todo!()
     }
 
+    fn parse_wildcard_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
 
+    fn parse_sequence_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
 
+    fn parse_mappings_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
 
-
-
+    fn parse_class_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
+        todo!()
+    }
 
 
     fn parse_capture_target(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
