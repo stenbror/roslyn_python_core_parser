@@ -557,9 +557,66 @@ impl MatchPatternRules for PythonCoreParser {
 
 
     fn parse_class_pattern(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
-        todo!()
-    }
+        let pos = self.lexer.position;
+        let mut nodes = Vec::<Box<SyntaxNode>>::new();
+        let mut separators = Vec::<Box<Token>>::new();
 
+        match &*self.lexer.symbol {
+            Token::NameToken( _ , _ , text , _ ) => {
+                match &*text.as_str() {
+                    "_" => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Not expecting '_' in class name")))),
+                    _ => {
+                        nodes.push(self.parse_atom_expr()?);
+
+                        loop {
+                            match &*self.lexer.symbol {
+                                Token::PeriodToken( _ , _ , _ ) => {
+                                    separators.push(self.lexer.symbol.clone());
+                                    self.lexer.advance();
+
+                                    match &*self.lexer.symbol {
+                                        Token::NameToken( _ , _ , _ , _ ) => nodes.push(self.parse_atom_expr()?),
+                                        _ => return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting NAME after '.' in class name!"))))
+                                    }
+                                },
+                                _ => break
+                            }
+                        }
+
+                        match &*self.lexer.symbol {
+                            Token::LeftParenToken( _ , _ , _ ) => {
+                                let symbol1 = self.lexer.symbol.clone();
+                                self.lexer.advance();
+
+                                match &*self.lexer.symbol {
+                                    Token::RightParenToken( _ , _ , _ ) => {
+                                        let symbol2 = self.lexer.symbol.clone();
+                                        self.lexer.advance();
+
+                                        nodes.reverse();
+                                        separators.reverse();
+
+                                        Ok(Box::new(SyntaxNode::ClassPatternNode(pos, self.lexer.position, nodes, separators, symbol1, Vec::new(), Vec::new(), symbol2)))
+                                    },
+                                    _ => {
+
+                                        return Err(Box::new(SyntaxError::new(self.lexer.position, String::from("FIX!"))))
+                                    }
+                                }
+                            },
+                            _ => {
+                                nodes.reverse();
+                                separators.reverse();
+
+                                Ok(Box::new(SyntaxNode::NameAttributeNode(pos, self.lexer.position, nodes, separators)))
+                            }
+                        }
+                    }
+                }
+            },
+            _ => Err(Box::new(SyntaxError::new(self.lexer.position, String::from("Expecting name in class pattern!"))))
+        }
+    }
 
     fn parse_capture_target(&mut self) -> Result<Box<SyntaxNode>, Box<SyntaxError>> {
         let pos = self.lexer.position;
